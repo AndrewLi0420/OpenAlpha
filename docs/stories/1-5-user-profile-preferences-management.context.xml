@@ -1,0 +1,158 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.5</storyId>
+    <title>User Profile & Preferences Management</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-5-user-profile-preferences-management.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>logged-in user</asA>
+    <iWant>to set my holding period preference (daily/weekly/monthly) and risk tolerance (low/medium/high)</iWant>
+    <soThat>recommendations are tailored to my investment style</soThat>
+    <tasks>
+      - Create backend preferences endpoint (AC: 1, 4, 5)
+      - Create backend preferences update endpoint (AC: 4)
+      - Create frontend profile page (AC: 1, 2, 3, 7)
+      - Integrate frontend with backend API (AC: 1, 4, 5)
+      - Implement preferences persistence (AC: 5)
+      - Backend database operations (AC: 4)
+      - Frontend TypeScript types (AC: 2, 3)
+      - Testing: Unit tests for backend CRUD (AC: 4)
+      - Testing: Integration tests for preferences endpoints (AC: 1, 4, 5)
+      - Testing: Frontend component tests (AC: 1, 2, 3, 7)
+      - Testing: End-to-end preferences flow (AC: 4, 5)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. User profile page displays current preferences
+    2. Holding period dropdown: Daily, Weekly, Monthly
+    3. Risk tolerance dropdown: Low, Medium, High
+    4. Preferences save to database on update
+    5. Preferences persist across sessions
+    6. Preferences are used to filter recommendations (will be implemented in Epic 3)
+    7. UI clearly shows saved preferences
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/epics.md" title="OpenAlpha - Epic Breakdown" section="Story 1.5: User Profile & Preferences Management" snippet="As a logged-in user, I want to set my holding period preference (daily/weekly/monthly) and risk tolerance (low/medium/high), so that recommendations are tailored to my investment style." />
+      <doc path="dist/tech-spec-epic-1.md" title="Epic Technical Specification: Foundation & User Authentication" section="Story 1.5: User Profile & Preferences Management" snippet="User Profile Service: Manages user preferences (holding period, risk tolerance) and profile updates. Inputs: User ID, preferences object. Outputs: Updated preferences record." />
+      <doc path="dist/PRD.md" title="OpenAlpha Product Requirements Document" section="User Account & Authentication (FR001-FR004)" snippet="FR002: User Profile Management - Users can set holding period preferences (daily/weekly/monthly) and risk tolerance level (low/medium/high). Profile information persists across sessions." />
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="User Endpoints" snippet="PUT /api/v1/users/me/preferences - Request Body: { holding_period: daily, risk_tolerance: medium }. Response 200: Updated preferences object. Validation: Enum values only (daily/weekly/monthly, low/medium/high)." />
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Data Architecture" snippet="user_preferences table with: user_id (foreign key), holding_period (enum), risk_tolerance (enum), updated_at (timestamp). 1:1 relationship: One preferences record per user." />
+      <doc path="dist/tech-spec-epic-1.md" title="Epic Technical Specification" section="Preferences Update Flow" snippet="User navigates to /profile page (requires authentication). Frontend loads current preferences via GET /api/v1/users/me. User selects new holding period and/or risk tolerance from dropdowns." />
+      <doc path="docs/stories/1-4-user-authentication-session-management.md" title="Story 1.4: User Authentication & Session Management" section="Dev Notes" snippet="FastAPI Users Authentication Pattern: Login endpoint successfully implemented using FastAPI Users login router. Profile page should use same authentication dependency pattern: get_current_user() or get_current_active_user() from FastAPI Users for protected endpoints." />
+    </docs>
+    <code>
+      <code path="backend/app/models/user_preferences.py" kind="SQLAlchemy model" symbol="UserPreferences" lines="14-51" reason="UserPreferences model with 1:1 relationship to User. Defines holding_period and risk_tolerance enum columns with defaults. Has user_id foreign key with unique constraint." />
+      <code path="backend/app/schemas/user_preferences.py" kind="Pydantic schema" symbol="UserPreferencesRead, UserPreferencesUpdate" lines="1-36" reason="Pydantic schemas for user preferences API. UserPreferencesUpdate allows partial updates (Optional fields). UserPreferencesRead includes id, user_id, and updated_at." />
+      <code path="backend/app/models/enums.py" kind="Enum definitions" symbol="HoldingPeriodEnum, RiskToleranceEnum" lines="11-22" reason="Enum types for holding period (daily/weekly/monthly) and risk tolerance (low/medium/high). Used in database models and Pydantic schemas." />
+      <code path="backend/app/core/auth.py" kind="FastAPI dependency" symbol="current_user" lines="47" reason="FastAPI Users authentication dependency for protected routes. Validates JWT token and returns User object. Use Depends(current_user) for protected endpoints." />
+      <code path="backend/app/users/routes.py" kind="API router" symbol="router" lines="1-28" reason="Example API router pattern showing how to use current_user dependency. Follow this pattern for adding GET /users/me/preferences and PUT /users/me/preferences endpoints." />
+      <code path="backend/app/users/models.py" kind="SQLAlchemy model" symbol="User" lines="13-26" reason="User model with preferences relationship. Has preferences relationship defined (1:1 via back_populates). Reference for foreign key relationship." />
+      <code path="frontend/src/services/api.ts" kind="API client" symbol="apiClient" lines="1-35" reason="Axios instance configured with base URL from environment variable. Use this for preferences API calls. Note: Auth token handling TODO commented out - HTTP-only cookies are used instead." />
+      <code path="backend/app/db/config.py" kind="Database config" symbol="get_db, async_session_maker" reason="Async SQLAlchemy session factory. Use AsyncSession = Depends(get_db) for database operations in endpoints." />
+    </code>
+    <dependencies>
+      <node>
+        <package name="axios" version="^1.13.1" />
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="react-router-dom" version="^6.30.1" />
+        <package name="@testing-library/react" version="^16.3.0" />
+        <package name="vitest" version="^3.2.4" />
+      </node>
+      <python>
+        <package name="fastapi" version=">=0.109.2" />
+        <package name="fastapi-users[sqlalchemy]" version=">=10.4.1" />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" />
+        <package name="pydantic[email,dotenv]" version=">=1.10.6" />
+        <package name="pytest" version=">=7.2.2" />
+        <package name="pytest-asyncio" version=">=0.21.0" />
+        <package name="httpx" version=">=0.23.3" />
+      </python>
+      <note>React Query (@tanstack/react-query) not yet installed - will be needed for server state management. Architecture recommends React Query 5.x.</note>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - **Authentication Required**: All preferences endpoints must use `Depends(current_user)` from `backend/app/core/auth.py` for authentication
+    - **Async SQLAlchemy**: Use async SQLAlchemy patterns throughout. All database operations use `AsyncSession` from `get_db()` dependency
+    - **Pydantic V2**: Use Pydantic V2 patterns (ConfigDict, field_validator) - avoid deprecated V1 patterns
+    - **Enum Validation**: Use HoldingPeriodEnum and RiskToleranceEnum from `backend/app/models/enums.py` - do not hardcode string values
+    - **1:1 Relationship**: UserPreferences table has unique constraint on user_id - ensure upsert logic handles create vs update correctly
+    - **HTTP-only Cookies**: Authentication uses HTTP-only cookies (FastAPI Users default) - do not use localStorage for tokens
+    - **React Query**: Frontend should use React Query for server state management (useQuery for GET, useMutation for PUT) - package needs to be installed first
+    - **Protected Routes**: Profile page must be wrapped in ProtectedRoute component (from Story 1.4) to require authentication
+    - **Error Handling**: Follow error handling pattern from `backend/app/main.py` - use structured error format with error.type and error.message
+    - **Testing**: Follow existing test patterns in `backend/tests/test_api/` for integration tests and `frontend/src/pages/Register.test.tsx` for component tests
+  </constraints>
+
+  <interfaces>
+    <interface name="GET /api/v1/users/me/preferences" kind="REST endpoint" signature="GET /api/v1/users/me/preferences
+Headers: Cookie with JWT token (HTTP-only cookie managed by FastAPI Users)
+Response 200: { holding_period: 'daily' | 'weekly' | 'monthly', risk_tolerance: 'low' | 'medium' | 'high', id: UUID, user_id: UUID, updated_at: datetime }
+Response 404: Preferences not found for user
+Response 401: Unauthorized if token invalid" path="backend/app/api/v1/endpoints/users.py (to be created)" />
+    <interface name="PUT /api/v1/users/me/preferences" kind="REST endpoint" signature="PUT /api/v1/users/me/preferences
+Headers: Cookie with JWT token (HTTP-only cookie)
+Request Body: { holding_period?: 'daily' | 'weekly' | 'monthly', risk_tolerance?: 'low' | 'medium' | 'high' }
+Response 200: Updated preferences object (same format as GET)
+Response 400: { error: { type: 'ValidationError', message: 'Invalid enum value', detail: '...' } }
+Response 401: Unauthorized if token invalid" path="backend/app/api/v1/endpoints/users.py (to be created)" />
+    <interface name="current_user" kind="FastAPI dependency" signature="current_user(active: bool = True) -> Depends
+FastAPI dependency for protected routes
+Validates JWT token from HTTP-only cookie and returns User object
+Raises 401 if token invalid
+Usage: async def endpoint(user: User = Depends(current_user))" path="backend/app/core/auth.py:47" />
+    <interface name="get_user_preferences" kind="CRUD function" signature="async def get_user_preferences(session: AsyncSession, user_id: UUID) -> UserPreferences | None
+Queries user_preferences table by user_id
+Returns UserPreferences object or None if not found" path="backend/app/crud/users.py (to be created)" />
+    <interface name="upsert_user_preferences" kind="CRUD function" signature="async def upsert_user_preferences(session: AsyncSession, user_id: UUID, preferences: UserPreferencesUpdate) -> UserPreferences
+Creates preferences if doesn't exist, updates if exists
+Returns updated/created UserPreferences object
+Uses merge() or select-then-create/update pattern" path="backend/app/crud/users.py (to be created)" />
+    <interface name="getPreferences" kind="Frontend service function" signature="async function getPreferences(): Promise&lt;UserPreferences&gt;
+GET request to /api/v1/users/me/preferences
+Returns UserPreferences object
+Handles 404 by returning default preferences object
+Throws on 401 (redirect handled by interceptor)" path="frontend/src/services/userPreferences.ts (to be created)" />
+    <interface name="updatePreferences" kind="Frontend service function" signature="async function updatePreferences(preferences: UserPreferencesUpdate): Promise&lt;UserPreferences&gt;
+PUT request to /api/v1/users/me/preferences
+Returns updated UserPreferences object
+Throws on 400/401 errors" path="frontend/src/services/userPreferences.ts (to be created)" />
+    <interface name="Profile" kind="React component" signature="Profile(): JSX.Element
+Profile page component
+Uses React Query useQuery to fetch preferences
+Uses React Query useMutation to update preferences
+Displays holding period and risk tolerance dropdowns
+Shows tier status from user object
+Wrapped in ProtectedRoute for authentication" path="frontend/src/pages/Profile.tsx (to be created)" />
+  </interfaces>
+
+  <tests>
+    <standards>Backend uses pytest with pytest-asyncio for async tests. Integration tests use FastAPI AsyncClient with ASGITransport. Test fixtures provide database session and authenticated test users. Frontend uses Vitest with React Testing Library. Component tests mock API services and React Query hooks. Test files follow naming pattern: test_{module_name}.py for backend, {Component}.test.tsx for frontend. All tests should be in backend/tests/ or frontend/src/ directories respectively.</standards>
+    <locations>
+      - Backend unit tests: `backend/tests/test_auth/` (for auth-related unit tests), `backend/tests/test_models/` (for model tests)
+      - Backend integration tests: `backend/tests/test_api/` (for API endpoint tests)
+      - Frontend component tests: Co-located with components (e.g., `frontend/src/pages/Profile.test.tsx`)
+      - Frontend service tests: `frontend/src/services/` (co-located with service files)
+    </locations>
+    <ideas>
+      <test ac="1">Test Profile component renders preferences display when data loaded</test>
+      <test ac="2">Test holding period dropdown has all three options (Daily, Weekly, Monthly)</test>
+      <test ac="3">Test risk tolerance dropdown has all three options (Low, Medium, High)</test>
+      <test ac="4">Test PUT endpoint updates database correctly, test GET endpoint returns updated data, test CRUD functions create and update preferences</test>
+      <test ac="5">Test preferences persist after browser refresh (React Query cache), test preferences persist after logout/login cycle (database storage)</test>
+      <test ac="7">Test UI displays current preferences after load, test UI updates after successful save</test>
+      <test integration="true">Test GET /api/v1/users/me/preferences with authenticated user returns 200, test GET with unauthenticated user returns 401, test PUT with valid data returns 200 and updates DB, test PUT with invalid enum values returns 400</test>
+      <test e2e="true">Test complete flow: load preferences, update preferences, refresh page, verify persisted. Test preferences persist across logout/login cycle.</test>
+    </ideas>
+  </tests>
+</story-context>
+

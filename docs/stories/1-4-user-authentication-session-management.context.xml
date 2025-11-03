@@ -1,0 +1,167 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>4</storyId>
+    <title>User Authentication & Session Management</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-4-user-authentication-session-management.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>registered user</asA>
+    <iWant>to log in securely and maintain my session</iWant>
+    <soThat>I can access my personalized dashboard</soThat>
+    <tasks>
+      - Create backend login endpoint (AC: 1, 2, 3, 7): FastAPI Users login router, password verification, JWT tokens in HTTP-only cookies, generic error messages
+      - Create frontend login page (AC: 1, 7): Login.tsx component with form validation, error handling, Tailwind CSS styling
+      - Implement authentication state management (AC: 3, 4, 6): useAuth hook, React Query cache, session persistence
+      - Create protected route components (AC: 4): ProtectedRoute.tsx component with auth checks, React Router integration
+      - Implement logout functionality (AC: 5): Backend logout endpoint, frontend logout function, clear session data
+      - Configure session persistence (AC: 6): HTTP-only cookies, cookie settings, session verification on app load
+      - Backend API route integration (AC: 1, 2, 3): FastAPI Users configuration, JWT strategy, cookie settings
+      - Testing: Unit tests for authentication (AC: 2, 7): Password verification, JWT token generation, cookie setting, error handling
+      - Testing: Integration tests for login endpoint (AC: 1-3, 7): Valid/invalid credentials, JWT token in cookie, session persistence
+      - Testing: Frontend component tests (AC: 1, 4, 5, 7): Login form, ProtectedRoute, logout, error handling
+      - Testing: End-to-end authentication flow (AC: 3, 4, 6): Complete login flow, protected routes, session persistence, logout
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Login page with email and password fields
+    2. Secure authentication using password hashing
+    3. Session management (JWT tokens or session cookies)
+    4. Protected routes require authentication
+    5. Logout functionality clears session
+    6. Session persists across browser refreshes
+    7. Error messages for invalid credentials (without revealing if email exists)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact path="dist/tech-spec-epic-1.md" title="Epic Technical Specification: Foundation & User Authentication" section="Story 1.4: User Authentication & Session Management" snippet="Story 1.4 implements secure login with JWT tokens via HTTP-only cookies, protected routes, and session persistence. FastAPI Users handles password verification, token generation, and cookie management." />
+      <artifact path="dist/epics.md" title="OpenAlpha - Epic Breakdown" section="Story 1.4: User Authentication & Session Management" snippet="As a registered user, I want to log in securely and maintain my session, so that I can access my personalized dashboard. Includes login page, secure authentication, session management, protected routes, logout, session persistence, and generic error messages." />
+      <artifact path="dist/PRD.md" title="OpenAlpha Product Requirements Document" section="User Account & Authentication (FR001-FR004)" snippet="FR001: Users can log in and log out securely. Session management for authenticated access. Protected routes require authentication. Session persists across browser refreshes. Error messages for invalid credentials (without revealing if email exists)." />
+      <artifact path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Authentication Endpoints" snippet="POST /api/v1/auth/login endpoint with email and password validation. Response format: { access_token: jwt-token, token_type: bearer }. JWT tokens stored in HTTP-only cookies (secure, httpOnly=True). Error format: Generic error message Invalid email or password." />
+      <artifact path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Security Architecture" snippet="JWT tokens via HTTP-only cookies (not localStorage) to prevent XSS attacks. Token expiration: 24-hour access tokens with refresh token mechanism. Cookie settings: httpOnly=True, secure=True (production), sameSite='lax'. Password verification: bcrypt comparison via FastAPI Users." />
+      <artifact path="dist/tech-spec-epic-1.md" title="Epic Technical Specification" section="Test Strategy Summary" snippet="Unit tests: Password verification (bcrypt comparison), JWT token generation, cookie setting. Integration tests: POST /api/v1/auth/login with valid/invalid credentials, JWT token in HTTP-only cookie. Component tests: Login form, protected route guards, logout. Use pytest with async support, React Testing Library, Vitest." />
+      <artifact path="docs/stories/1-3-user-registration.md" title="Story 1.3: User Registration" section="Dev Agent Record" snippet="FastAPI Users integration complete. Auth router configured at /api/v1/auth prefix. Password hashing via bcrypt (12 rounds). JWT token strategy available. Frontend auth service pattern established. React Router setup complete. Testing infrastructure established." />
+    </docs>
+    <code>
+      <artifact path="backend/app/core/auth.py" kind="controller" symbol="get_auth_router, get_jwt_strategy, auth_backend" lines="1-49" reason="FastAPI Users auth router configuration. Login router already included via fastapi_users.get_auth_router(auth_backend). JWT strategy configured with HTTP-only cookies via BearerTransport. Current setup uses BearerTransport but should use CookieTransport for HTTP-only cookies per architecture." />
+      <artifact path="backend/app/users/models.py" kind="model" symbol="User, get_user_db" lines="13-34" reason="User model extends SQLAlchemyBaseUserTableUUID. Database adapter function get_user_db() provides SQLAlchemyUserDatabase for FastAPI Users. Required for login authentication." />
+      <artifact path="backend/app/users/manager.py" kind="service" symbol="UserManager, get_user_manager, validate_password" lines="13-49" reason="UserManager extends BaseUserManager with password validation. Password verification handled via FastAPI Users bcrypt comparison. Used by login router for authentication." />
+      <artifact path="backend/app/users/schemas.py" kind="schema" symbol="UserCreate, UserRead" lines="1-26" reason="User schemas for API validation. UserCreate extends schemas.BaseUserCreate (includes email/password). May need UserLogin schema if FastAPI Users requires separate login schema." />
+      <artifact path="backend/app/main.py" kind="controller" symbol="get_application, exception_handler" lines="1-56" reason="FastAPI app initialization. Auth router included via get_auth_router(). Exception handler pattern for user-friendly error messages (UserAlreadyExists). CORS configured for frontend origins." />
+      <artifact path="backend/app/core/config.py" kind="config" symbol="Settings, AUTH_TOKEN_LIFETIME_SECONDS, SECRET_KEY" lines="30-81" reason="Application settings including SECRET_KEY for JWT, AUTH_TOKEN_LIFETIME_SECONDS (default 3600), and LOGIN_PATH configuration. Required for JWT strategy configuration." />
+      <artifact path="frontend/src/services/auth.ts" kind="service" symbol="register" lines="1-35" reason="Auth service with register() function. Pattern for adding login() and logout() functions. Uses apiClient for HTTP requests. Follow same pattern for login/logout." />
+      <artifact path="frontend/src/services/api.ts" kind="service" symbol="apiClient" lines="1-34" reason="Axios instance with base URL from VITE_API_URL. Request interceptor (TODO: add auth token). Response interceptor (TODO: handle 401/403). Ready for login cookie handling." />
+      <artifact path="frontend/src/pages/Register.tsx" kind="component" symbol="Register" lines="1-215" reason="Registration page component. Reference for login page structure: form validation, error handling, Tailwind CSS styling, React Router navigation. Use similar patterns for Login.tsx." />
+      <artifact path="frontend/src/App.tsx" kind="component" symbol="App, BrowserRouter, Routes" lines="1-24" reason="React Router setup with BrowserRouter and Routes. Currently has /register route. Add /login route and protect /dashboard and /profile routes with ProtectedRoute component." />
+      <artifact path="backend/tests/test_auth/test_registration.py" kind="test" symbol="test_password_validation, test_email_validation, test_password_hashing" lines="1-192" reason="Unit test pattern for authentication. Tests password validation, email validation, password hashing via bcrypt. Use same pattern for login tests. Pytest with async support." />
+      <artifact path="backend/tests/test_api/test_registration_endpoint.py" kind="test" symbol="test_register_valid, test_register_invalid, test_register_duplicate" lines="1-143" reason="Integration test pattern for auth endpoints. Tests POST /api/v1/auth/register with valid/invalid data. Use same pattern for login endpoint tests. FastAPI TestClient (AsyncClient)." />
+      <artifact path="frontend/src/pages/Register.test.tsx" kind="test" symbol="renders form fields, email validation, password validation, form submission" lines="1-560" reason="Frontend component test pattern. Tests form rendering, validation, submission, error handling. Use React Testing Library and Vitest. Mock API service functions. Use same pattern for Login.tsx tests." />
+    </code>
+    <dependencies>
+      <node>
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="react-router-dom" version="^6.30.1" />
+        <package name="axios" version="^1.13.1" />
+        <package name="@testing-library/react" version="^16.3.0" />
+        <package name="@testing-library/user-event" version="^14.6.1" />
+        <package name="vitest" version="^3.2.4" />
+        <package name="typescript" version="~5.9.3" />
+      </node>
+      <python>
+        <package name="fastapi" version=">=0.109.2" />
+        <package name="fastapi-users[sqlalchemy]" version=">=10.4.1" />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" />
+        <package name="pydantic[email,dotenv]" version=">=1.10.6" />
+        <package name="pytest" version=">=7.2.2" />
+        <package name="pytest-asyncio" version=">=0.21.0" />
+        <package name="httpx" version=">=0.23.3" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use FastAPI Users library for authentication - do not implement custom login logic</constraint>
+    <constraint>JWT tokens must be stored in HTTP-only cookies (not localStorage) - use CookieTransport instead of BearerTransport in auth.py</constraint>
+    <constraint>Cookie settings: httpOnly=True, secure=True (production only), sameSite='lax'</constraint>
+    <constraint>Error messages must be generic - do not reveal if email exists in system</constraint>
+    <constraint>Password verification handled automatically by FastAPI Users via bcrypt comparison</constraint>
+    <constraint>Session persistence via HTTP-only cookies - cookies managed by backend, frontend reads via API calls</constraint>
+    <constraint>Protected routes require authentication check via useAuth hook - redirect to /login if unauthenticated</constraint>
+    <constraint>Use React Query for auth state management (server state) - not local component state</constraint>
+    <constraint>Follow existing registration patterns for login: same error handling, validation, styling</constraint>
+    <constraint>Testing: Use pytest with async support for backend, Vitest with React Testing Library for frontend</constraint>
+    <constraint>Naming: Login page at frontend/src/pages/Login.tsx, auth hook at frontend/src/hooks/useAuth.ts, protected route at frontend/src/components/common/ProtectedRoute.tsx</constraint>
+    <constraint>API endpoints: POST /api/v1/auth/login, POST /api/v1/auth/logout, GET /api/v1/users/me (for session verification)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="POST /api/v1/auth/login" kind="REST endpoint" signature="POST /api/v1/auth/login
+Request Body: { email: string, password: string }
+Response 200: { access_token: string, token_type: 'bearer' }
+Response 401: { error: { type: 'AuthenticationError', message: 'Invalid email or password' } }
+Sets HTTP-only cookie with JWT token" path="backend/app/core/auth.py" />
+    <interface name="POST /api/v1/auth/logout" kind="REST endpoint" signature="POST /api/v1/auth/logout
+Headers: Cookie with JWT token
+Response 204: No content
+Clears HTTP-only cookie" path="backend/app/core/auth.py" />
+    <interface name="GET /api/v1/users/me" kind="REST endpoint" signature="GET /api/v1/users/me
+Headers: Cookie with JWT token
+Response 200: { id: string, email: string, tier: 'free' | 'premium', is_verified: boolean }
+Response 401: Unauthorized if token invalid" path="backend/app/users/routes.py" />
+    <interface name="fastapi_users.get_auth_router" kind="function" signature="get_auth_router(auth_backend: AuthenticationBackend) -> APIRouter
+Returns FastAPI router with login and logout endpoints
+Configured via FastAPI Users library" path="backend/app/core/auth.py:40" />
+    <interface name="fastapi_users.current_user" kind="dependency" signature="current_user(active: bool = True) -> Depends
+FastAPI dependency for protected routes
+Validates JWT token and returns User object
+Raises 401 if token invalid" path="backend/app/core/auth.py:47" />
+    <interface name="useAuth" kind="React hook" signature="useAuth(): { user: User | null, isAuthenticated: boolean, login: (email: string, password: string) => Promise&lt;void&gt;, logout: () => void, isLoading: boolean }
+Manages authentication state via React Query
+Checks session on initialization
+Provides login/logout functions" path="frontend/src/hooks/useAuth.ts (to be created)" />
+    <interface name="ProtectedRoute" kind="React component" signature="ProtectedRoute({ children }: { children: React.ReactNode }): JSX.Element
+Checks authentication via useAuth hook
+Redirects to /login if unauthenticated
+Renders children if authenticated
+Shows loading state while checking" path="frontend/src/components/common/ProtectedRoute.tsx (to be created)" />
+    <interface name="login" kind="function" signature="login(email: string, password: string): Promise&lt;LoginResponse&gt;
+Sends POST /api/v1/auth/login request
+Updates auth state via React Query
+Handles HTTP-only cookie from response
+Returns LoginResponse with token info" path="frontend/src/services/auth.ts (to be extended)" />
+    <interface name="logout" kind="function" signature="logout(): Promise&lt;void&gt;
+Sends POST /api/v1/auth/logout request
+Clears auth state and React Query cache
+Redirects to /login" path="frontend/src/services/auth.ts (to be extended)" />
+  </interfaces>
+
+  <tests>
+    <standards>
+      Backend testing: Use pytest with pytest-asyncio for async support. Test fixtures in backend/tests/conftest.py provide database session and test user data. Use FastAPI TestClient (AsyncClient) for integration tests. Test structure follows pattern in backend/tests/test_auth/test_registration.py. Frontend testing: Use Vitest with React Testing Library. Test structure follows pattern in frontend/src/pages/Register.test.tsx. Mock API service functions. Test both unit (components) and integration (API calls) scenarios. End-to-end: Manual testing with browser DevTools to verify HTTP-only cookies, cookie attributes, and session persistence.
+    </standards>
+    <locations>
+      <location>backend/tests/test_auth/</location>
+      <location>backend/tests/test_api/</location>
+      <location>frontend/src/pages/*.test.tsx</location>
+      <location>frontend/src/components/**/*.test.tsx</location>
+      <location>frontend/src/hooks/**/*.test.ts</location>
+    </locations>
+    <ideas>
+      <test acId="AC1">Test Login component renders email and password input fields. Test form submission triggers login API call. Test form validation (email format, required fields).</test>
+      <test acId="AC2">Test password verification via bcrypt comparison in UserManager. Test password hashing verification works correctly. Test invalid password returns 401 error.</test>
+      <test acId="AC3">Test JWT token generation on successful login. Test HTTP-only cookie is set with JWT token. Test cookie attributes (httpOnly, secure, sameSite). Test session persists across multiple requests using same cookie.</test>
+      <test acId="AC4">Test ProtectedRoute redirects unauthenticated users to /login. Test ProtectedRoute renders child component when authenticated. Test useAuth hook provides authentication state. Test protected routes require valid JWT token.</test>
+      <test acId="AC5">Test logout endpoint clears HTTP-only cookie. Test logout function clears auth state and React Query cache. Test logout redirects to /login page. Test logout clears all session data.</test>
+      <test acId="AC6">Test session persists across browser refresh (cookie still valid). Test GET /api/v1/users/me verifies session on app load. Test auth state loads from cookie on app initialization. Test session expiration redirects to login.</test>
+      <test acId="AC7">Test invalid credentials return generic error message Invalid email or password. Test non-existent email returns same error as invalid password (doesn't reveal email existence). Test error message doesn't leak system information.</test>
+    </ideas>
+  </tests>
+</story-context>
+

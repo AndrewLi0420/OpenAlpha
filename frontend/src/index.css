@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@reference "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-black text-white min-h-screen;
+  }
+}
+
+@layer utilities {
+  /* Typography utilities for numerical data */
+  .text-number {
+    @apply font-mono text-lg;
+  }
+  
+  .text-number-lg {
+    @apply font-mono text-2xl;
+  }
+  
+  .text-number-xl {
+    @apply font-mono text-3xl;
+  }
+}

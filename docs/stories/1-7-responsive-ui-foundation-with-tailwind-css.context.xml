@@ -1,0 +1,170 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>7</storyId>
+    <title>Responsive UI Foundation with Tailwind CSS</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-7-responsive-ui-foundation-with-tailwind-css.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>user</asA>
+    <iWant>a responsive web interface with black background and financial blue/green accents</iWant>
+    <soThat>I can access OpenAlpha on desktop or mobile devices</soThat>
+    <tasks>
+      - Configure Tailwind CSS in frontend project (AC: 1)
+      - Implement color scheme with black background and financial accents (AC: 2)
+      - Implement responsive design breakpoints (AC: 3)
+      - Create navigation structure (AC: 4)
+      - Create basic layout components (AC: 5)
+      - Optimize typography for numerical data display (AC: 6)
+      - Verify WCAG contrast requirements (AC: 7)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Tailwind CSS configured and integrated
+    2. Black background color scheme with financial blue/green accents applied
+    3. Responsive design works on desktop (1920px, 1280px) and mobile (375px, 414px)
+    4. Navigation structure established (Dashboard, Historical, Profile)
+    5. Basic layout components created (header, sidebar/nav, main content area)
+    6. Typography optimized for numerical data display
+    7. Color scheme accessible (WCAG contrast requirements met)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Story 1.7: Responsive UI Foundation with Tailwind CSS">
+        Acceptance criteria for Tailwind CSS configuration, color scheme, responsive design, navigation, layout components, typography, and accessibility requirements.
+      </doc>
+      <doc path="dist/epics.md" title="Epic Breakdown" section="Story 1.7: Responsive UI Foundation with Tailwind CSS">
+        User story definition and acceptance criteria for responsive UI foundation with black background and financial blue/green accents.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="Platform Requirements (FR026-FR027)">
+        Web-first responsive interface requirement with Tailwind CSS styling framework. Responsive design adapts to different screen sizes including desktop and mobile.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="User Interface Design Goals">
+        Design style specifications: Black background with financial blue/green accents, clear typography optimized for numerical data display, clean modern aesthetic focused on data clarity.
+      </doc>
+      <doc path="dist/architecture.md" title="Architecture Document" section="UI Design Goals">
+        Responsive design requirements: Desktop (1920px, 1280px) and mobile (375px, 414px). Navigation structure: Dashboard, Historical, Profile. Tailwind CSS 3.x for styling framework.
+      </doc>
+      <doc path="dist/architecture.md" title="Architecture Document" section="Project Structure">
+        Frontend structure: Layout components in `frontend/src/components/common/`. Pages in `frontend/src/pages/`. Tailwind config in `frontend/tailwind.config.js`.
+      </doc>
+      <doc path="dist/architecture.md" title="Architecture Document" section="Technology Stack Details">
+        Tailwind CSS 3.x, React 18+ with TypeScript, React Router for navigation, PostCSS and Autoprefixer for CSS processing.
+      </doc>
+      <doc path="docs/stories/1-6-freemium-tier-enforcement.md" title="Previous Story: Freemium Tier Enforcement" section="Dev Notes">
+        Learnings: Components organized in `frontend/src/components/common/`. Tailwind CSS may already be partially configured (components use Tailwind classes). React Router navigation patterns. TypeScript patterns for component props.
+      </doc>
+    </docs>
+    <code>
+      <code path="frontend/src/App.tsx" kind="component" symbol="App" lines="1-39" reason="Main App component with React Router setup. Routes exist: /dashboard, /profile. Navigation structure needs to be added here." />
+      <code path="frontend/src/pages/Profile.tsx" kind="component" symbol="Profile" lines="82-223" reason="Profile page uses Tailwind classes (bg-black, bg-gray-900, text-blue-300, text-green-300). Reference for color scheme and styling patterns. Currently has inline layout, should use Layout component." />
+      <code path="frontend/src/pages/Dashboard.tsx" kind="component" symbol="Dashboard" lines="7-38" reason="Dashboard page uses Tailwind classes (bg-black, bg-gray-900). Needs navigation integration. Reference for color scheme patterns." />
+      <code path="frontend/src/components/common/UpgradePrompt.tsx" kind="component" symbol="UpgradePrompt" lines="14-43" reason="Existing common component using Tailwind classes. Reference for component structure, TypeScript interface patterns, and Tailwind styling (bg-blue-900, bg-green-600, text-blue-300)." />
+      <code path="frontend/src/components/common/ProtectedRoute.tsx" kind="component" symbol="ProtectedRoute" lines="15-34" reason="Existing route protection component. Shows loading state pattern with Tailwind (bg-black, text-white). Reference for component organization." />
+      <code path="frontend/src/hooks/useAuth.ts" kind="hook" symbol="useAuth" lines="13-74" reason="Authentication hook using React Query. Navigation uses React Router useNavigate. Reference for hook patterns and navigation integration." />
+      <code path="frontend/src/index.css" kind="stylesheet" symbol="root styles" lines="1-68" reason="Current CSS file with default Vite styles. Needs Tailwind directives (@tailwind base; @tailwind components; @tailwind utilities;) added. Currently has default color scheme that conflicts with black background requirement." />
+      <code path="frontend/vite.config.ts" kind="config" symbol="viteConfig" lines="1-13" reason="Vite configuration. May need updates for Tailwind CSS processing if PostCSS config doesn't suffice." />
+      <code path="frontend/package.json" kind="manifest" symbol="dependencies" lines="14-42" reason="Package manifest. Tailwind CSS, PostCSS, and Autoprefixer NOT currently installed. React Router DOM installed. React Query installed. Vitest and React Testing Library available for testing." />
+    </code>
+    <dependencies>
+      <node>
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="react-router-dom" version="^6.30.1" />
+        <package name="@tanstack/react-query" version="^5.90.6" />
+        <package name="typescript" version="~5.9.3" />
+        <package name="vite" version="^5.4.11" />
+        <package name="tailwindcss" version="NOT INSTALLED - requires installation" />
+        <package name="postcss" version="NOT INSTALLED - requires installation" />
+        <package name="autoprefixer" version="NOT INSTALLED - requires installation" />
+        <package name="vitest" version="^3.2.4" />
+        <package name="@testing-library/react" version="^16.3.0" />
+        <package name="@testing-library/jest-dom" version="^6.9.1" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Color Scheme: Must use black background (#000000) with financial blue/green accents. Existing components already use: blue-600, blue-700, blue-900, text-blue-300, green-600, green-700, green-900, text-green-300, gray-800, gray-900. Maintain consistency with existing color usage.</constraint>
+    <constraint>Responsive Breakpoints: Must work on desktop (1920px, 1280px) and mobile (375px, 414px). Use Tailwind default breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px), 2xl (1536px). Custom breakpoints can be added if needed.</constraint>
+    <constraint>Navigation Structure: Must include Dashboard, Historical, Profile links. Historical route does not exist yet (only /dashboard and /profile exist). Historical page will be created in future epic.</constraint>
+    <constraint>Component Organization: Layout components must be in `frontend/src/components/common/` directory following existing pattern (UpgradePrompt.tsx, ProtectedRoute.tsx are already there).</constraint>
+    <constraint>TypeScript: All components must use TypeScript with proper interface definitions for props. Follow existing patterns from UpgradePrompt.tsx.</constraint>
+    <constraint>React Router: Navigation must use `Link` components from `react-router-dom`. Active route highlighting required. Reference existing Link usage in UpgradePrompt.tsx.</constraint>
+    <constraint>Accessibility: WCAG AA contrast ratio required (4.5:1 for normal text, 3:1 for large text). Black background with white/light text must meet contrast requirements. Test all color combinations.</constraint>
+    <constraint>Tailwind Configuration: Must configure content paths: `['./src/**/*.{js,ts,jsx,tsx}']` in tailwind.config.js. PostCSS config required with tailwindcss and autoprefixer plugins.</constraint>
+    <constraint>Typography: Optimize for numerical data display. Consider monospace font for numbers. System font stack acceptable. Font sizes must be readable on mobile (not too small).</constraint>
+    <constraint>Layout Structure: Header at top, optional Sidebar on side, main content area fills remaining space. Responsive: Desktop shows full nav, mobile shows hamburger menu or bottom nav.</constraint>
+    <constraint>Testing: Use Vitest with React Testing Library (already configured). Test component rendering, responsive breakpoints, color scheme, navigation routing, keyboard accessibility.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="React Router Navigation" kind="routing library" signature="Link component: import { Link } from 'react-router-dom'; &lt;Link to='/path'&gt;Text&lt;/Link&gt;" path="frontend/src/components/common/UpgradePrompt.tsx" />
+    <interface name="React Router Routes" kind="routing configuration" signature="BrowserRouter, Routes, Route components configured in App.tsx. Routes: /login, /register, /dashboard, /profile" path="frontend/src/App.tsx" />
+    <interface name="Navigation Hook" kind="React hook" signature="useNavigate() from react-router-dom for programmatic navigation" path="frontend/src/hooks/useAuth.ts" />
+    <interface name="Component Props Interface" kind="TypeScript interface" signature="interface ComponentNameProps { prop1: type; prop2?: type; }" path="frontend/src/components/common/UpgradePrompt.tsx" />
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing framework: Vitest with React Testing Library. Test files co-located with components or in test directories. Use `render()` from @testing-library/react. Mock React Router Link components if needed. Test component rendering, user interactions, responsive behavior, and accessibility (keyboard navigation, contrast).
+    </standards>
+    <locations>
+      - frontend/src/components/common/*.test.tsx (component tests)
+      - frontend/src/pages/*.test.tsx (page component tests)
+      - frontend/src/test/setup.ts (test setup configuration)
+    </locations>
+    <ideas>
+      <test idea="AC1: Tailwind Configuration" criteria="1">
+        - Test Tailwind classes work: Render component with Tailwind classes, verify styles applied
+        - Test content paths configuration: Verify Tailwind processes files in src directory
+        - Test PostCSS integration: Verify Tailwind directives compile correctly
+      </test>
+      <test idea="AC2: Color Scheme" criteria="2">
+        - Test black background applied: Verify bg-black class renders correctly
+        - Test financial blue accents: Verify blue-600, blue-900, text-blue-300 classes work
+        - Test financial green accents: Verify green-600, green-900, text-green-300 classes work
+        - Test color consistency: Compare with existing Profile and Dashboard components
+      </test>
+      <test idea="AC3: Responsive Design" criteria="3">
+        - Test desktop breakpoints: Mock window width to 1920px, verify layout
+        - Test desktop 1280px: Mock window width to 1280px, verify layout
+        - Test mobile 375px: Mock window width to 375px, verify mobile layout
+        - Test mobile 414px: Mock window width to 414px, verify landscape layout
+        - Test navigation responsive: Verify hamburger menu on mobile, full nav on desktop
+      </test>
+      <test idea="AC4: Navigation Structure" criteria="4">
+        - Test navigation links render: Verify Dashboard, Historical, Profile links present
+        - Test navigation routing: Click link, verify route changes (mock useNavigate or Link)
+        - Test active route highlighting: Verify current route is highlighted
+        - Test Historical link: Note Historical route doesn't exist yet (future epic)
+      </test>
+      <test idea="AC5: Layout Components" criteria="5">
+        - Test Header component: Verify renders app title/logo and navigation
+        - Test Layout wrapper: Verify Header and main content render correctly
+        - Test Sidebar (if created): Verify renders on desktop, hidden on mobile
+        - Test main content area: Verify flex-1 class, padding classes applied
+        - Test responsive layout: Verify layout changes at breakpoints
+      </test>
+      <test idea="AC6: Typography" criteria="6">
+        - Test font family: Verify system font or monospace font applied
+        - Test numerical data styling: Render numbers, verify font-mono or appropriate font
+        - Test font sizes: Verify text sizes readable on mobile
+        - Test line height: Verify line-height optimized for readability
+      </test>
+      <test idea="AC7: WCAG Contrast" criteria="7">
+        - Test black background contrast: Calculate contrast ratio for white/light text on black
+        - Test accent color contrast: Verify blue/green colors meet contrast when used for text
+        - Test keyboard navigation: Verify all interactive elements keyboard accessible (tab order)
+        - Test focus states: Verify focus rings visible and meet contrast requirements
+      </test>
+    </ideas>
+  </tests>
+</story-context>
+

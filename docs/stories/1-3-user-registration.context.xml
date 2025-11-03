@@ -1,0 +1,205 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>3</storyId>
+    <title>User Registration</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-3-user-registration.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>new user</asA>
+    <iWant>to create an account with email and password</iWant>
+    <soThat>I can access personalized recommendations and track my preferences</soThat>
+    <tasks>
+      - Create backend registration endpoint (AC: 1, 2, 3, 4, 5)
+        - Create `backend/app/api/v1/endpoints/auth.py` with POST `/api/v1/auth/register` endpoint
+        - Use FastAPI Users register router (configured via FastAPI Users library)
+        - Create Pydantic schemas for registration request: `RegisterRequest` (email, password) in `backend/app/schemas/user.py`
+        - Configure password validation: minimum 8 characters, complexity check (client and server-side)
+        - Configure email validation: format check using Pydantic EmailStr or regex validation
+        - Use FastAPI Users password hashing (bcrypt via FastAPI Users, 12 rounds)
+        - Handle duplicate email errors: catch SQLAlchemy IntegrityError, return user-friendly message "An account with this email already exists"
+        - Set default tier to 'free' for new users (via User model default)
+        - Set is_verified to False initially (email verification deferred)
+        - Return 201 Created with user object: `{ "id": "uuid", "email": "user@example.com", "is_verified": false }`
+        - Return 400 Bad Request for validation errors with structured error format
+      - Create frontend registration page (AC: 1, 2, 3, 6)
+        - Create `frontend/src/pages/Register.tsx` component
+        - Add form with email and password input fields
+        - Add password confirmation field (optional, for better UX)
+        - Implement client-side email validation (format check on input change)
+        - Implement client-side password validation (minimum 8 characters, show requirements)
+        - Add loading state during registration submission
+        - Add error message display for validation and API errors
+        - Add success handling: redirect to `/login` page after successful registration
+        - Style with Tailwind CSS: black background, blue/green accents (preview of Story 1.7 styling)
+        - Use React Router for navigation
+      - Integrate frontend with backend API (AC: 1, 6)
+        - Create or update `frontend/src/services/api.ts` with Axios instance configured
+        - Set base URL from `VITE_API_URL` environment variable
+        - Create `frontend/src/services/auth.ts` with `register()` function
+        - Function sends POST request to `/api/v1/auth/register` with email and password
+        - Handle 201 response: extract user object, redirect to login
+        - Handle 400 response: display validation error messages
+        - Handle 409/duplicate email: display user-friendly message "An account with this email already exists. Please log in or use a different email."
+        - Configure CORS headers (backend must allow frontend origin)
+      - Email verification setup (basic) (AC: 7)
+        - Configure Resend email service in `backend/app/core/config.py` (RESEND_API_KEY from environment)
+        - Create email template in `backend/app/emails/` (basic welcome email, optional verification link)
+        - Use FastAPI Users email verification hooks (optional - basic flow means email sent but verification not required for login)
+        - Log email sending attempts (success/failure)
+        - Handle email service failures gracefully (registration succeeds even if email fails)
+      - Backend API route integration (AC: 1, 4)
+        - Configure FastAPI Users in `backend/app/main.py` or `backend/app/users/router.py`
+        - Register auth router with FastAPI app: include FastAPI Users router for `/auth/register`
+        - Configure SQLAlchemy user adapter for FastAPI Users (use existing User model from `backend/app/users/models.py`)
+        - Ensure database session available for FastAPI Users operations
+        - Test registration endpoint with Postman/curl
+      - Testing: Unit tests for registration (AC: 1-7)
+        - Test email validation: valid formats pass, invalid formats rejected
+        - Test password validation: minimum 8 characters enforced, complexity check works
+        - Test duplicate email handling: returns 400 with user-friendly message
+        - Test password hashing: verify password_hash is different from input password, verify bcrypt verification works
+        - Test user creation: verify user created with tier='free', is_verified=False
+        - Use pytest with async support (`pytest-asyncio`)
+        - Test fixtures: database session, test user data
+      - Testing: Integration tests for registration endpoint (AC: 1-7)
+        - Test POST `/api/v1/auth/register` with valid data: returns 201, user created in database
+        - Test POST `/api/v1/auth/register` with invalid email: returns 400
+        - Test POST `/api/v1/auth/register` with weak password: returns 400
+        - Test POST `/api/v1/auth/register` with duplicate email: returns 400 with error message
+        - Verify database state: user record created correctly with all fields
+        - Use FastAPI TestClient for endpoint testing
+        - Verify CORS headers present in responses
+      - Testing: Frontend component tests (AC: 1, 2, 3, 6)
+        - Test Register component renders form fields
+        - Test email validation on input change
+        - Test password validation on input change
+        - Test form submission with valid data: calls API, redirects on success
+        - Test error handling: displays error messages from API
+        - Use React Testing Library and Jest
+        - Mock API service functions
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. Registration page with email and password fields
+    2. Email validation (format check)
+    3. Password requirements enforced (minimum length, complexity)
+    4. Password securely hashed before storage
+    5. Duplicate email detection with user-friendly error message
+    6. Successful registration redirects to login or onboarding
+    7. Email verification flow (basic - can be enhanced later)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/epics.md" title="OpenAlpha - Epic Breakdown" section="Story 1.3: User Registration">
+        User registration story with acceptance criteria: registration page, email validation, password requirements, secure password hashing, duplicate email detection, redirect behavior, and email verification flow.
+      </doc>
+      <doc path="dist/tech-spec-epic-1.md" title="Epic Technical Specification: Foundation & User Authentication" section="Story 1.3: User Registration">
+        Technical specification for user registration including API endpoints, data models, workflows, and acceptance criteria. POST /api/v1/auth/register endpoint with email/password validation, response format {id, email, is_verified}, error handling.
+      </doc>
+      <doc path="dist/PRD.md" title="OpenAlpha Product Requirements Document" section="FR001: User Registration and Authentication">
+        Functional requirement FR001: Users can create accounts with email/password, log in securely, session management for authenticated access.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Authentication Endpoints">
+        Authentication service architecture: POST /api/v1/auth/register endpoint, FastAPI Users library, password hashing (bcrypt), response format {id, email, is_verified}, error format structure.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Project Structure">
+        Frontend structure: Register component at frontend/src/pages/Register.tsx, API client at frontend/src/services/api.ts (Axios instance), Auth service at frontend/src/services/auth.ts, base URL from VITE_API_URL environment variable.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Security Architecture">
+        Password security: Password hashing using bcrypt with 12 rounds (via FastAPI Users), password requirements minimum 8 characters with complexity validation, password never stored in plaintext, only bcrypt hashes.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Epic to Architecture Mapping">
+        Epic 1 mapping: Backend models at backend/app/models/user.py, API endpoints at backend/app/api/v1/endpoints/auth.py, Frontend pages at frontend/src/pages/Login.tsx and Register.tsx, Database users and user_preferences tables.
+      </doc>
+      <doc path="dist/tech-spec-epic-1.md" title="Epic Technical Specification" section="Dependencies and Integrations">
+        Resend API integration for email verification: Integration point at backend/app/core/config.py (API key from environment variable), used in user registration flow, Resend free tier (3,000 emails/month) rate limits.
+      </doc>
+      <doc path="docs/stories/1-2-database-schema-design.md" title="Story 1.2: Database Schema Design" section="Dev Agent Record">
+        Previous story learnings: Database schema complete with Users table (id, email, password_hash, tier, is_verified, created_at, updated_at), FastAPI Users integration ready, User model extends SQLAlchemyBaseUserTableUUID, database session available.
+      </doc>
+    </docs>
+    <code>
+      <artifact path="backend/app/core/auth.py" kind="service" symbol="get_auth_router" lines="37-44" reason="FastAPI Users registration router configured. Router includes register_router with UserRead and UserCreate schemas. This is the main endpoint handler for registration." />
+      <artifact path="backend/app/users/models.py" kind="model" symbol="User" lines="13-26" reason="User model extends SQLAlchemyBaseUserTableUUID from FastAPI Users. Includes tier field with default TierEnum.FREE. Model ready for registration endpoint use." />
+      <artifact path="backend/app/users/schemas.py" kind="schema" symbol="UserCreate" lines="21-22" reason="Pydantic schema for user creation extends BaseUser and schemas.BaseUserCreate. Includes email and password fields for registration request validation." />
+      <artifact path="backend/app/users/schemas.py" kind="schema" symbol="UserRead" lines="17-18" reason="Response schema for user data after registration. Returns user object with id, email, is_verified fields matching acceptance criteria." />
+      <artifact path="backend/app/db/config.py" kind="config" symbol="async_session_maker" lines="14-16" reason="Database session factory configured for async SQLAlchemy. Used by FastAPI Users for database operations. Provides AsyncSession for user creation." />
+      <artifact path="backend/app/core/config.py" kind="config" symbol="Settings" lines="37-87" reason="Application settings including SECRET_KEY for JWT, DATABASE_URI, CORS origins, email configuration. RESEND_API_KEY should be added here for email verification." />
+      <artifact path="backend/app/main.py" kind="router" symbol="get_application" lines="18-57" reason="FastAPI app configuration includes auth router via get_auth_router(). CORS middleware configured for localhost origins in dev environment. Database registration included." />
+      <artifact path="backend/app/users/manager.py" kind="service" symbol="get_user_manager" lines="43-44" reason="UserManager dependency for FastAPI Users. Handles password hashing, user creation, and database operations via SQLAlchemyUserDatabase adapter." />
+      <artifact path="backend/app/emails/welcome.html" kind="template" symbol="welcome.html" lines="1-5" reason="Email template for welcome email. Can be used for basic email verification flow. Template uses Jinja2 syntax with user variable." />
+      <artifact path="backend/app/models/enums.py" kind="enum" symbol="TierEnum" lines="5-8" reason="User tier enumeration: FREE and PREMIUM values. Default tier for new users should be FREE as specified in acceptance criteria." />
+    </code>
+    <dependencies>
+      <ecosystem type="python">
+        <package name="fastapi-users[sqlalchemy]" version=">=10.4.1" />
+        <package name="fastapi" version=">=0.109.2" />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" />
+        <package name="pydantic[email,dotenv]" version=">=1.10.6" />
+        <package name="resend" version=">=2.0.0" />
+        <package name="pytest" version=">=7.2.2" />
+        <package name="pytest-asyncio" version=">=0.21.0" />
+      </ecosystem>
+      <ecosystem type="node">
+        <package name="react" version="^19.1.1" />
+        <package name="react-dom" version="^19.1.1" />
+        <package name="axios" version="^1.13.1" />
+        <package name="typescript" version="~5.9.3" />
+        <package name="vite" version="^5.4.11" />
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use async SQLAlchemy patterns throughout. All database operations must use async functions with AsyncSession. FastAPI Users handles password hashing and JWT token generation automatically.</constraint>
+    <constraint>Password hashing: bcrypt with 12 rounds via FastAPI Users library. Password requirements: minimum 8 characters with complexity validation (client and server-side).</constraint>
+    <constraint>Email validation: Use Pydantic EmailStr or regex validation. Format check on both frontend (client-side) and backend (server-side).</constraint>
+    <constraint>Default tier: All new users must be created with tier='free' via User model default (TierEnum.FREE). Set is_verified=False initially.</constraint>
+    <constraint>Error handling: Duplicate email errors must catch SQLAlchemy IntegrityError and return user-friendly message "An account with this email already exists". Generic error messages for authentication failures.</constraint>
+    <constraint>API response format: 201 Created returns {id, email, is_verified}. 400 Bad Request returns structured error format {error: {type, message, detail}}.</constraint>
+    <constraint>CORS: Backend must allow frontend origin. CORS middleware configured in main.py for localhost origins in dev, configured origins for prod.</constraint>
+    <constraint>Email verification: Basic flow means email sent via Resend service but verification not required for login in MVP. Registration succeeds even if email sending fails.</constraint>
+    <constraint>Frontend navigation: React Router used for navigation. Successful registration redirects to /login page.</constraint>
+    <constraint>Testing: Use pytest with async support (pytest-asyncio) for backend tests. Use React Testing Library and Jest for frontend component tests.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="POST /auth/register" kind="REST endpoint" signature="POST /auth/register
+Request Body: { email: string, password: string }
+Response 201: { id: uuid, email: string, is_verified: boolean }
+Response 400: { error: { type: string, message: string, detail: string } }" path="backend/app/core/auth.py" />
+    <interface name="FastAPI Users Register Router" kind="library router" signature="fastapi_users.get_register_router(UserRead, UserCreate)
+Returns: APIRouter with POST /register endpoint
+Handles: Email validation, password hashing, user creation, duplicate email detection" path="backend/app/core/auth.py" />
+    <interface name="UserCreate Schema" kind="Pydantic schema" signature="class UserCreate(BaseUser, schemas.BaseUserCreate)
+Fields: email: EmailStr, password: str
+Validation: Email format, password requirements" path="backend/app/users/schemas.py" />
+    <interface name="User Model" kind="SQLAlchemy model" signature="class User(SQLAlchemyBaseUserTableUUID, TimeStampedModel)
+Fields: id: UUID, email: str, password_hash: str, tier: TierEnum, is_verified: bool, created_at: datetime, updated_at: datetime" path="backend/app/users/models.py" />
+  </interfaces>
+
+  <tests>
+    <standards>Testing uses pytest with async support (pytest-asyncio) for backend unit and integration tests. Frontend component tests use React Testing Library and Jest. Test fixtures include database session and test user data. Unit tests cover email validation, password validation, duplicate email handling, password hashing verification, and user creation with correct defaults. Integration tests verify POST /api/v1/auth/register endpoint behavior with valid/invalid data, database state changes, and CORS headers. Component tests verify form rendering, validation, API integration, and navigation behavior.</standards>
+    <locations>
+      <location>backend/tests/test_models/</location>
+      <location>backend/tests/test_migrations/</location>
+      <location>frontend/src/**/*.test.tsx</location>
+    </locations>
+    <ideas>
+      <test acId="1,2,3">Test registration page renders email and password fields. Test email format validation on input change (valid/invalid formats). Test password validation shows requirements and enforces minimum 8 characters.</test>
+      <test acId="4">Test password hashing: verify password_hash stored in database is different from input password, verify bcrypt verification works with hashed password.</test>
+      <test acId="5">Test duplicate email handling: attempt registration with existing email, verify returns 400 with user-friendly message "An account with this email already exists".</test>
+      <test acId="6">Test successful registration: submit valid form, verify API called with correct data, verify redirect to /login page on success.</test>
+      <test acId="7">Test email verification flow: verify email sent via Resend service (mock), verify registration succeeds even if email sending fails, verify is_verified=False initially.</test>
+      <test acId="1-7">Integration test: POST /api/v1/auth/register with valid data returns 201, user created in database with tier='free' and is_verified=False, all fields correct.</test>
+    </ideas>
+  </tests>
+</story-context>
+

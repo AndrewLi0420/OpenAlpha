@@ -1,0 +1,209 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>4</storyId>
+    <title>Additional Sentiment Sources (Web Scraping)</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-03T05:43:38Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-4-additional-sentiment-sources-web-scraping.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system</asA>
+    <iWant>collect sentiment from additional sources (news sites, financial forums) via web scraping</iWant>
+    <soThat>sentiment analysis is more comprehensive and reliable</soThat>
+    <tasks>
+- Create web scraping sentiment collection service (AC: 1, 2, 3, 6)
+  - Create `backend/app/services/sentiment_service.py` following service pattern from Story 2.2
+  - Install web scraping dependencies: `beautifulsoup4`, `requests` (or `httpx` for async) in `requirements.txt`
+  - Implement web scraping collector class: `WebScrapingSentimentCollector`
+  - Implement function: `collect_sentiment_from_web(stock_symbol: str, source_url: str)` → returns {sentiment_score, source, timestamp}
+  - Add error handling: Handle scraping failures (sites down, HTML structure changes, network errors)
+  - Add rate limiting: Respect robots.txt, implement delays between requests
+  - Implement robots.txt parser: Check robots.txt before scraping, respect crawl-delay
+  - Validate scraped data: Ensure sentiment score is valid (-1.0 to 1.0), handle missing data gracefully
+  - Parse timestamp: Convert scraped content timestamp to UTC datetime for storage
+
+- Create sentiment data CRUD operations (AC: 5)
+  - Create `backend/app/crud/sentiment_data.py` following CRUD pattern from Story 2.2
+  - Implement `create_sentiment_data()` - Insert new sentiment data record with source attribution
+  - Implement `get_latest_sentiment_data(stock_id, source=None)` - Get most recent sentiment for a stock (optionally filtered by source)
+  - Implement `get_sentiment_data_history(stock_id, start_date, end_date, source=None)` - Get historical sentiment data
+  - Implement `get_aggregated_sentiment(stock_id)` - Get unified sentiment score aggregated from all sources
+  - Verify database model exists: `backend/app/models/sentiment_data.py` from Story 1.2 (verify fields: id, stock_id, sentiment_score, source, timestamp, created_at)
+  - Use async SQLAlchemy patterns following Story 2.2 patterns
+
+- Implement sentiment aggregation service (AC: 4)
+  - Create sentiment aggregator in `backend/app/services/sentiment_service.py`
+  - Implement `aggregate_sentiment_scores(sentiment_records: List[SentimentData])` → unified score
+  - Implement weighted aggregation: Combine multiple source scores (can start with simple average, allow configurable weights)
+  - Handle missing sources: Aggregation works with partial data (some sources unavailable)
+  - Store source attribution: Maintain list of sources used in aggregation
+  - Return aggregated result with metadata: {sentiment_score, source_count, sources: [source_list]}
+
+- Implement multiple source collectors (AC: 2)
+  - Configure 2-3 target sources: Financial news sites (e.g., MarketWatch, Seeking Alpha, or similar)
+  - Implement individual collector functions for each source: `collect_from_source_1()`, `collect_from_source_2()`, etc.
+  - Abstract common scraping logic: Base collector class or shared utilities
+  - Handle source-specific parsing: Each source may have different HTML structure
+  - Implement sentiment scoring: Convert scraped text content to sentiment score (-1.0 to 1.0)
+  - Use simple sentiment analysis: Can use Python libraries (e.g., `vaderSentiment`, `textblob`) or simple keyword-based scoring
+  - Test with multiple stocks: Verify collectors work for various Fortune 500 stocks
+
+- Create APScheduler scheduled task for sentiment collection (AC: 1, 2)
+  - Create `backend/app/tasks/sentiment.py` following task pattern from Story 2.2
+  - Implement `collect_sentiment()` async function - Triggers collection for all 500 stocks from all sources
+  - Implement batch processing: Process stocks in batches (manage rate limits and scraping delays)
+  - Integrate with APScheduler: Add job to scheduler in `backend/app/lifetime.py`
+  - Configure hourly trigger: `scheduler.add_job(collect_sentiment, 'cron', hour='*', minute=0)`
+  - Add overlap handling: Prevent overlapping job runs (use APScheduler coalesce/max_instances)
+  - Make job idempotent: Re-running doesn't create duplicate records (check timestamp/source uniqueness)
+  - Call aggregation service: After collecting from all sources, aggregate scores per stock
+
+- Implement ethical scraping practices (AC: 3)
+  - Add robots.txt parser: Check and respect robots.txt rules before scraping
+  - Implement crawl-delay respect: Add delays between requests based on robots.txt crawl-delay directive
+  - Add rate limiting: Implement delays between requests (e.g., 2-5 seconds between requests to same domain)
+  - Add user-agent header: Set identifiable user-agent (e.g., "OpenAlpha-Bot/1.0")
+  - Handle robots.txt disallow: Skip scraping if robots.txt disallows path
+  - Log scraping activities: Log which URLs scraped, when, with delays respected
+  - Add configuration for scraping delays: Environment variable or config setting for crawl-delay
+
+- Implement error handling for scraping failures (AC: 6)
+  - Handle network errors: Timeout errors, connection failures, DNS errors
+  - Handle HTML structure changes: Parse errors, missing elements, structure mismatches
+  - Handle site unavailability: 404, 503, 500 errors - continue with other sources
+  - Implement graceful degradation: Continue scraping other sources if one source fails
+  - Log scraping failures: Log which stock, which source, error type, for debugging
+  - Retry logic for transient failures: Retry on network timeouts (1-2 retries with delay)
+  - Track source health: Track which sources are consistently failing (for monitoring)
+
+- Store sentiment data with source attribution (AC: 5)
+  - Store individual source sentiment: Each source's sentiment stored separately in `sentiment_data` table
+  - Store source name: `source` field in sentiment_data table (e.g., "marketwatch", "seeking_alpha")
+  - Store timestamp: When sentiment was collected (scraped content timestamp or collection time)
+  - Store aggregated sentiment: Optionally store aggregated score (or compute on-demand)
+  - Ensure data integrity: Foreign key relationships, unique constraints if needed (stock_id + source + timestamp)
+
+- Testing: Unit tests for sentiment collection service (AC: 1, 2, 3, 6)
+  - Test web scraping collector: Mock HTML responses, test parsing logic, sentiment scoring
+  - Test robots.txt parsing: Verify robots.txt rules respected, crawl-delay applied
+  - Test rate limiting: Verify delays between requests, rate limit handling
+  - Test error handling: Invalid HTML, missing elements, network errors, site unavailable
+  - Test sentiment aggregation: Verify aggregation logic, weighted scores, missing sources handled
+  - Use pytest with async support (`pytest-asyncio`)
+  - Mock HTTP requests using `responses` library or `httpx` AsyncClient
+  - Mock HTML content using BeautifulSoup fixtures
+
+- Testing: Integration tests for sentiment collection task (AC: 1, 2, 4, 6)
+  - Test APScheduler job execution: Verify job runs on schedule, batch processing
+  - Test multiple source collection: Verify all sources scraped, data stored correctly
+  - Test aggregation: Verify aggregated scores computed and stored
+  - Test graceful degradation: Verify pipeline continues with partial source failures
+  - Test database storage: Verify sentiment_data records created correctly with source attribution
+  - Use pytest with FastAPI TestClient (AsyncClient)
+  - Mock external websites but test real database operations
+
+- Testing: Performance tests for batch scraping (AC: 1, 2, 3)
+  - Test batch processing time: Verify 500 stocks processed within time constraints (respecting delays)
+  - Test rate limiting: Verify delays between requests respected, crawl-delay applied
+  - Test robots.txt parsing performance: Verify parsing doesn't add significant overhead
+  - Test concurrent scraping: Verify async processing respects rate limits across sources
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Web scraping infrastructure (BeautifulSoup/Scrapy) configured
+2. Sentiment collected from 2-3 additional sources (e.g., financial news sites)
+3. Ethical scraping practices: rate limiting, robots.txt respect
+4. Sentiment aggregation: multiple sources combined into unified sentiment score
+5. Sentiment data stored with source attribution
+6. Error handling for scraping failures (sites down, structure changes)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Tech Spec" section="Story 2.4: Additional Sentiment Sources (Web Scraping)" snippet="Primary technical specification for this story. Defines web scraping sentiment collector service, sentiment aggregation service, database schema for sentiment_data table, and multi-source collection workflow with ethical scraping practices." />
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Tech Spec" section="Services and Modules" snippet="Web Scraping Sentiment Collector service definition: collects sentiment from news sites and financial forums via scraping, inputs stock symbols and target URLs, outputs sentiment scores in sentiment_data table with source attribution." />
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Tech Spec" section="Data Models and Contracts" snippet="Sentiment Data table schema: id (UUID), stock_id (UUID foreign key indexed), sentiment_score (DECIMAL(3,2) normalized -1.0 to 1.0), source (VARCHAR(50)), timestamp (TIMESTAMP indexed), created_at (TIMESTAMP)." />
+      <doc path="dist/architecture.md" title="Architecture" section="Pattern 1: Multi-Source Sentiment Aggregation with Transparency" snippet="Architecture pattern for combining sentiment from multiple sources (web scraping sources for MVP, Twitter in v2) while maintaining source attribution and aggregation into unified scores. Supports graceful degradation when sources unavailable." />
+      <doc path="dist/architecture.md" title="Architecture" section="Database Schema Overview" snippet="Sentiment data table design with time-series indexing on timestamp and foreign key indexing on stock_id for efficient time-series queries and joins with stocks table." />
+      <doc path="dist/architecture.md" title="Architecture" section="ADR-006: Defer Twitter Sentiment to v2" snippet="Decision to defer Twitter sentiment collection (Story 2.3) to v2 due to cost ($200/month), making Story 2.4 web scraping sentiment the PRIMARY SENTIMENT SOURCE FOR MVP." />
+      <doc path="docs/stories/2-2-market-data-collection-pipeline.md" title="Story 2.2: Market Data Collection Pipeline" section="Dev Notes" snippet="Service pattern established for async data collection with RateLimiter class, batch processing (50 stocks per batch), graceful degradation, error handling with exponential backoff retry logic (3 attempts: 1s, 2s, 4s), and APScheduler job scheduling. Follow this pattern for sentiment collection." />
+      <doc path="docs/stories/2-2-market-data-collection-pipeline.md" title="Story 2.2: Market Data Collection Pipeline" section="CRUD Pattern" snippet="Market data CRUD operations pattern at backend/app/crud/market_data.py with create_market_data(), get_latest_market_data(), get_market_data_history() functions. Follow similar pattern for sentiment_data CRUD." />
+      <doc path="docs/stories/2-2-market-data-collection-pipeline.md" title="Story 2.2: Market Data Collection Pipeline" section="Task Pattern" snippet="APScheduler task pattern at backend/app/tasks/market_data.py with batch processing (50 stocks per batch), overlap handling (max_instances=1, coalesce=True), idempotent operations, and job scheduling in lifetime.py." />
+      <doc path="dist/epics.md" title="Epic Breakdown" section="Story 2.4: Additional Sentiment Sources (Web Scraping)" snippet="Story scope: web scraping sentiment collection from 2-3 financial news sites, ethical scraping practices (robots.txt, rate limiting), sentiment aggregation, and source attribution. Primary sentiment source for MVP." />
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR010: Additional Sentiment Sources" snippet="Product requirement for collecting sentiment from multiple sources beyond Twitter, including news sites and financial forums via web scraping, with transparent source attribution." />
+    </docs>
+    <code>
+      <artifact path="backend/app/services/data_collection.py" kind="service" symbol="RateLimiter" lines="25-47" reason="Rate limiter class pattern to adapt for web scraping: tracks calls per minute, enforces delays between requests, handles rate limit exceeded errors. Adapt for robots.txt crawl-delay and domain-specific rate limiting." />
+      <artifact path="backend/app/services/data_collection.py" kind="service" symbol="collect_market_data_from_alpha_vantage" lines="50-212" reason="Error handling pattern with exponential backoff retry logic (3 attempts: 1s, 2s, 4s), HTTP status error handling (429 rate limit, 5xx server errors, 4xx client errors), timeout handling, and graceful failure. Adapt for web scraping with HTML parse errors and structure change handling." />
+      <artifact path="backend/app/tasks/market_data.py" kind="task" symbol="collect_market_data_for_stocks" lines="22-119" reason="Batch processing pattern: processes 500 stocks in batches of 50, concurrent data collection with sequential database commits, graceful degradation (continues on failures), statistics tracking (total, successful, failed), and delays between batches. Follow this pattern for sentiment collection with web scraping rate limits." />
+      <artifact path="backend/app/tasks/market_data.py" kind="task" symbol="BATCH_SIZE" lines="18-19" reason="Batch size constant (50 stocks per batch) to manage API rate limits. Adjust for web scraping delays and robots.txt crawl-delay constraints." />
+      <artifact path="backend/app/crud/market_data.py" kind="crud" symbol="create_market_data" lines="12-42" reason="CRUD create pattern: async function with session, stock_id, data fields (price, volume, timestamp), UUID generation, session.add(), commit(), refresh(). Follow for create_sentiment_data() with stock_id, sentiment_score, source, timestamp." />
+      <artifact path="backend/app/crud/market_data.py" kind="crud" symbol="get_latest_market_data" lines="45-65" reason="CRUD read pattern: async function with session, stock_id, SQLAlchemy select with order_by timestamp desc, limit 1. Follow for get_latest_sentiment_data() with optional source filter." />
+      <artifact path="backend/app/crud/market_data.py" kind="crud" symbol="get_market_data_history" lines="68-97" reason="CRUD history pattern: async function with session, stock_id, start_date, end_date, SQLAlchemy select with date range filter (and_), order_by timestamp asc. Follow for get_sentiment_data_history() with optional source filter." />
+      <artifact path="backend/app/models/sentiment_data.py" kind="model" symbol="SentimentData" lines="13-37" reason="Database model already exists from Story 1.2: id (UUID), stock_id (UUID foreign key indexed), sentiment_score (Numeric(5,4) normalized -1 to 1), source (String(255)), timestamp (DateTime indexed), relationships with Stock. Verify schema matches tech spec requirements." />
+      <artifact path="backend/app/schemas/sentiment_data.py" kind="schema" symbol="SentimentDataCreate" lines="17-20" reason="Pydantic schemas exist: SentimentDataBase, SentimentDataCreate, SentimentDataUpdate, SentimentDataRead. Use for API validation and CRUD operations." />
+    </code>
+    <dependencies>
+      <python>
+        <package name="beautifulsoup4" version="latest" reason="HTML parsing for web scraping. Required for extracting sentiment content from news sites." />
+        <package name="httpx" version=">=0.23.3" reason="Async HTTP client for web scraping requests. Already installed from Story 2.2, prefer over requests for async support." />
+        <package name="requests" version="latest" reason="Alternative HTTP client (optional, httpx preferred for async). Use only if BeautifulSoup requires synchronous client." />
+        <package name="apscheduler[sqlalchemy]" version=">=3.10.0" reason="Background job scheduling. Already installed from Story 2.2. Use for hourly sentiment collection task." />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" reason="ORM for database operations with async support. Already installed. Use for sentiment_data CRUD operations." />
+        <package name="vaderSentiment" version="latest" reason="Optional: Sentiment analysis library for converting scraped text to sentiment scores (-1.0 to 1.0). Alternative: textblob or simple keyword-based scoring for MVP." />
+        <package name="textblob" version="latest" reason="Optional: Alternative sentiment analysis library. Can use simple keyword-based scoring for MVP instead." />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Service Pattern: Follow async service pattern from backend/app/services/data_collection.py with async/await, proper error handling, logging, and validation.</constraint>
+    <constraint>CRUD Pattern: Follow CRUD pattern from backend/app/crud/market_data.py with async SQLAlchemy operations, proper session management, and query optimization.</constraint>
+    <constraint>Task Pattern: Follow APScheduler task pattern from backend/app/tasks/market_data.py with batch processing (50 stocks per batch), overlap handling (max_instances=1, coalesce=True), and idempotent operations.</constraint>
+    <constraint>Batch Processing: Process 500 stocks in batches to manage rate limits and scraping delays. Respect robots.txt crawl-delay directives.</constraint>
+    <constraint>Rate Limiting: Implement delays between requests (2-5 seconds per domain), respect robots.txt crawl-delay, and track requests per domain.</constraint>
+    <constraint>Error Handling: Graceful degradation - continue with available sources if one source fails. Retry transient network failures (1-2 retries with delay), but don't retry HTML structure changes (log and skip).</constraint>
+    <constraint>Database Schema: Use existing SentimentData model from backend/app/models/sentiment_data.py. Verify schema matches tech spec: sentiment_score DECIMAL(3,2) normalized -1.0 to 1.0, source VARCHAR(50), timestamp indexed.</constraint>
+    <constraint>Testing: Use pytest with async support (pytest-asyncio), mock HTTP requests with responses library or httpx AsyncClient, mock HTML with BeautifulSoup fixtures, test real database operations. Coverage target: 80%+ for backend services.</constraint>
+    <constraint>Architecture: Multi-source sentiment aggregation pattern supports multiple sources with source attribution. MVP uses 2-3 web scraping sources, Twitter deferred to v2.</constraint>
+    <constraint>Performance: Process 500 stocks hourly within time constraints (target: <30 minutes for full batch, respecting scraping delays and robots.txt crawl-delay). Partial success acceptable (e.g., 450/500 stocks updated).</constraint>
+    <constraint>Ethical Scraping: Check robots.txt before scraping, respect crawl-delay directives, implement delays between requests, use identifiable user-agent header ("OpenAlpha-Bot/1.0"), skip paths disallowed by robots.txt.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="WebScrapingSentimentCollector" kind="Class" signature="class WebScrapingSentimentCollector: async def collect_sentiment_from_web(stock_symbol: str, source_url: str) -> dict[str, Any] | None" path="backend/app/services/sentiment_service.py" note="Web scraping collector class. Returns dict with sentiment_score (float -1.0 to 1.0), source (str), timestamp (datetime UTC). Returns None on failure. Handles HTML parsing, robots.txt checking, rate limiting, and error handling." />
+    <interface name="collect_sentiment_from_source" kind="Function signature" signature="async def collect_sentiment_from_source_1(stock_symbol: str) -> dict[str, Any] | None" path="backend/app/services/sentiment_service.py" note="Individual source collector functions (collect_from_source_1, collect_from_source_2, etc.) for each financial news site. Each handles source-specific HTML parsing and sentiment scoring." />
+    <interface name="aggregate_sentiment_scores" kind="Function signature" signature="async def aggregate_sentiment_scores(sentiment_records: List[SentimentData]) -> dict[str, Any]" path="backend/app/services/sentiment_service.py" note="Sentiment aggregation function. Combines multiple source sentiment scores into unified score. Returns dict with sentiment_score (float), source_count (int), sources (list). Handles weighted aggregation and missing sources." />
+    <interface name="create_sentiment_data" kind="Function signature" signature="async def create_sentiment_data(session: AsyncSession, stock_id: UUID, sentiment_score: float, source: str, timestamp: datetime) -> SentimentData" path="backend/app/crud/sentiment_data.py" note="CRUD create function. Inserts new sentiment data record with source attribution. Follows pattern from create_market_data()." />
+    <interface name="get_latest_sentiment_data" kind="Function signature" signature="async def get_latest_sentiment_data(session: AsyncSession, stock_id: UUID, source: str | None = None) -> SentimentData | None" path="backend/app/crud/sentiment_data.py" note="CRUD read function. Gets most recent sentiment for a stock, optionally filtered by source. Follows pattern from get_latest_market_data()." />
+    <interface name="get_sentiment_data_history" kind="Function signature" signature="async def get_sentiment_data_history(session: AsyncSession, stock_id: UUID, start_date: datetime, end_date: datetime, source: str | None = None) -> List[SentimentData]" path="backend/app/crud/sentiment_data.py" note="CRUD history function. Gets historical sentiment data within date range, optionally filtered by source. Follows pattern from get_market_data_history()." />
+    <interface name="get_aggregated_sentiment" kind="Function signature" signature="async def get_aggregated_sentiment(session: AsyncSession, stock_id: UUID) -> dict[str, Any] | None" path="backend/app/crud/sentiment_data.py" note="CRUD aggregation query. Gets unified sentiment score aggregated from all sources for a stock. Returns dict with sentiment_score, source_count, sources list." />
+    <interface name="collect_sentiment" kind="APScheduler job" signature="async def collect_sentiment() -> None" path="backend/app/tasks/sentiment.py" note="APScheduler scheduled job. Triggers hourly at minute 0. Processes all 500 stocks in batches from all web scraping sources, aggregates scores, handles graceful degradation." />
+    <interface name="RateLimiter" kind="Class" signature="class RateLimiter: async def wait_if_needed() -> None" path="backend/app/services/sentiment_service.py" note="Rate limiter class adapted from data_collection.py. Enforces delays between requests, respects robots.txt crawl-delay, tracks requests per domain. Supports domain-specific rate limiting for web scraping." />
+  </interfaces>
+
+  <tests>
+    <standards>Testing uses pytest with async support (pytest-asyncio). Mock external websites using responses library or httpx AsyncClient for HTML responses, but test real database operations. Mock HTML content using BeautifulSoup fixtures. Test files organized in backend/tests/test_crud/ (unit tests for CRUD) and backend/tests/test_api/ (integration tests for services and scheduled tasks). Use db_session fixture from conftest.py for database tests. Coverage target: 80%+ for backend services per Tech Spec.</standards>
+    <locations>
+      <location>backend/tests/test_crud/test_sentiment_data.py</location>
+      <location>backend/tests/test_api/test_sentiment_collection.py</location>
+      <location>backend/tests/test_api/test_sentiment_performance.py</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test web scraping collector configuration: Verify BeautifulSoup and httpx properly configured, verify HTML parsing works with sample HTML fixtures, verify sentiment scoring converts text to scores (-1.0 to 1.0).</idea>
+      <idea ac="AC2">Test multiple source collection: Mock HTML responses from 2-3 different financial news sites, verify each source collector extracts sentiment correctly, verify source attribution stored in database.</idea>
+      <idea ac="AC3">Test robots.txt parsing: Verify robots.txt parser checks rules before scraping, respects crawl-delay directives, adds delays between requests, skips disallowed paths, uses identifiable user-agent header.</idea>
+      <idea ac="AC4">Test sentiment aggregation: Verify aggregation combines multiple source scores correctly (test weighted average and simple average), handles missing sources gracefully, returns source attribution metadata, handles edge cases (all sources fail, single source available).</idea>
+      <idea ac="AC5">Test database storage: Verify sentiment_data records created with correct stock_id, sentiment_score, source, timestamp. Verify get_latest_sentiment_data() retrieves most recent sentiment, get_sentiment_data_history() retrieves date range, get_aggregated_sentiment() computes unified score.</idea>
+      <idea ac="AC6">Test error handling: Mock network errors (timeout, connection failure, DNS error), HTML structure changes (parse errors, missing elements), site unavailability (404, 503, 500). Verify graceful degradation (continues with other sources), retry logic for transient failures, logging of failures.</idea>
+      <idea ac="AC1,AC2">Test APScheduler job execution: Verify job runs on schedule (hourly at minute 0), processes 500 stocks in batches, collects from all sources, aggregates scores, stores data correctly. Test overlap handling (max_instances=1, coalesce=True).</idea>
+      <idea ac="AC3">Test rate limiting: Verify delays between requests respected (2-5 seconds per domain), crawl-delay from robots.txt applied, rate limiter tracks requests per domain correctly, concurrent scraping respects rate limits.</idea>
+      <idea ac="AC1,AC2,AC3">Test performance: Verify 500 stocks processed within time constraints (target: <30 minutes), batch processing manages rate limits effectively, robots.txt parsing doesn't add significant overhead, concurrent scraping respects rate limits.</idea>
+    </ideas>
+  </tests>
+</story-context>
+

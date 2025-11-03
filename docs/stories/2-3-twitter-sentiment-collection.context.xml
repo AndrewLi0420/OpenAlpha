@@ -1,0 +1,130 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.3</storyId>
+    <title>Twitter Sentiment Collection</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-3-twitter-sentiment-collection.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system</asA>
+    <iWant>collect sentiment data from Twitter API for Fortune 500 stocks hourly (or configurable interval)</iWant>
+    <soThat>sentiment scores can inform ML predictions</soThat>
+    <tasks>
+      - Create Twitter sentiment collection service (AC: 1, 2, 4)
+      - Create sentiment data CRUD operations (AC: 5)
+      - Create APScheduler scheduled task (AC: 3)
+      - Implement batch processing with graceful degradation (AC: 2, 3, 7)
+      - Implement retry logic for API failures (AC: 7)
+      - Implement rate limiting (AC: 6)
+      - Track sentiment data freshness (AC: 3, 5)
+      - Install Twitter API dependency (AC: 1)
+      - Testing: Unit tests for Twitter sentiment collection service (AC: 1, 2, 4, 6, 7)
+      - Testing: Integration tests for scheduled task (AC: 3, 7)
+      - Testing: Performance tests for batch processing (AC: 2, 3, 6)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">Twitter API integration configured (free tier or basic tier)</criterion>
+    <criterion id="AC2">Sentiment collection script searches for tweets mentioning stock symbols or company names</criterion>
+    <criterion id="AC3">Hourly (or configurable) scheduled job collects sentiment data</criterion>
+    <criterion id="AC4">Sentiment scores calculated (positive/negative/neutral) and normalized</criterion>
+    <criterion id="AC5">Data stored in sentiment_data table: stock_id, sentiment_score, source, timestamp</criterion>
+    <criterion id="AC6">Rate limiting handled (Twitter API limits respected)</criterion>
+    <criterion id="AC7">Error handling for API failures with retry logic</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.3: Twitter Sentiment Collection" snippet="Twitter API integration configured, sentiment collection script searches for tweets, hourly scheduled job, sentiment scores calculated and normalized, stored in sentiment_data table with rate limiting and error handling." />
+      <doc path="dist/epics.md" title="Epic Breakdown" section="Story 2.3: Twitter Sentiment Collection" snippet="As a system, I want to collect sentiment data from Twitter API for Fortune 500 stocks hourly, so that sentiment scores can inform ML predictions." />
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR008: Twitter Sentiment Collection" snippet="System collects sentiment data from Twitter API hourly, sentiment data aggregated and processed for Fortune 500 stocks, sentiment scores calculated and stored with timestamps." />
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Pattern 1: Multi-Source Sentiment Aggregation with Transparency" snippet="Aggregate sentiment from multiple sources (Twitter API, web scraping) into unified scores while maintaining source attribution and freshness tracking. Each source collector should be independent and fail gracefully." />
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Data Architecture" snippet="Sentiment Data table: id (UUID), stock_id (UUID foreign key indexed), sentiment_score (DECIMAL(3,2) -1.0 to 1.0), source (VARCHAR(50)), timestamp (TIMESTAMP indexed), created_at." />
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Technology Stack Details" snippet="Twitter API client library (tweepy, python-twitter, or twitter-api-v2) for API integration. APScheduler 3.x for background job scheduling. SQLAlchemy 2.0.x for ORM with async support." />
+      <doc path="docs/stories/2-2-market-data-collection-pipeline.md" title="Story 2.2: Market Data Collection Pipeline" section="Dev Agent Record" snippet="Established patterns for service layer with rate limiting (RateLimiter class), exponential backoff retry logic (3 retries: 1s, 2s, 4s), batch processing (50 stocks per batch), graceful degradation, and APScheduler integration." />
+    </docs>
+    <code>
+      <artifact path="backend/app/services/data_collection.py" kind="service" symbol="collect_market_data_from_alpha_vantage" lines="50-238" reason="Reference pattern for external API integration with rate limiting (RateLimiter class at lines 25-47), exponential backoff retry logic (lines 82-209), and error handling. Follow same structure for Twitter sentiment collection." />
+      <artifact path="backend/app/services/data_collection.py" kind="class" symbol="RateLimiter" lines="25-47" reason="Rate limiting implementation pattern to reuse for Twitter API rate limiting. Enforces delays between API calls to respect free-tier limits." />
+      <artifact path="backend/app/crud/market_data.py" kind="crud" symbol="create_market_data" lines="12-42" reason="Reference pattern for sentiment_data CRUD operations. Use async SQLAlchemy patterns, UUID generation, and proper session handling." />
+      <artifact path="backend/app/crud/market_data.py" kind="crud" symbol="get_latest_market_data" lines="45-65" reason="Pattern for retrieving latest sentiment data per stock. Use timestamp ordering and limit(1) pattern." />
+      <artifact path="backend/app/crud/market_data.py" kind="crud" symbol="get_market_data_history" lines="68-97" reason="Pattern for historical sentiment data queries. Use date range filtering with timestamp indexes." />
+      <artifact path="backend/app/crud/market_data.py" kind="crud" symbol="get_stocks_with_stale_data" lines="122-160" reason="Pattern for tracking data freshness. Query stocks with sentiment data older than 1 hour. Reuse for sentiment freshness tracking." />
+      <artifact path="backend/app/tasks/market_data.py" kind="task" symbol="collect_market_data_for_stocks" lines="22-92" reason="Batch processing pattern for sentiment collection. Process 500 stocks in batches of 50, track success/failure, continue on partial failures, use async/await for concurrent processing." />
+      <artifact path="backend/app/tasks/market_data.py" kind="task" symbol="collect_market_data_job" lines="143-214" reason="APScheduler job pattern. Create separate database engine per job for isolation, handle errors gracefully, log aggregate results. Follow same pattern but offset trigger to minute 5." />
+      <artifact path="backend/app/lifetime.py" kind="config" symbol="startup" lines="15-49" reason="APScheduler initialization pattern. Add sentiment collection job with cron trigger (hour='*', minute=5), max_instances=1, coalesce=True. Validate Twitter API credentials on startup." />
+      <artifact path="backend/app/models/sentiment_data.py" kind="model" symbol="SentimentData" lines="13-37" reason="Sentiment data database model. Fields: id (UUID), stock_id (UUID foreign key indexed), sentiment_score (Numeric precision=5 scale=4), source (String(255)), timestamp (DateTime indexed). Verify exists from Story 1.2." />
+      <artifact path="backend/app/core/config.py" kind="config" symbol="settings" lines="" reason="Configuration pattern. Add TWITTER_API_KEY and TWITTER_API_SECRET to settings following ALPHA_VANTAGE_API_KEY pattern." />
+      <artifact path="backend/tests/test_api/test_market_data_collection.py" kind="test" symbol="test_collect_market_data_success" lines="17-54" reason="Integration test pattern for Twitter sentiment collection. Mock Twitter API responses, test sentiment calculation, verify database storage." />
+      <artifact path="backend/tests/test_api/test_market_data_collection.py" kind="test" symbol="test_collect_market_data_retry_logic" lines="109-144" reason="Retry logic test pattern. Mock API failures, verify exponential backoff, verify max retries limit." />
+      <artifact path="backend/tests/test_api/test_market_data_collection.py" kind="test" symbol="test_collect_market_data_batch_processing" lines="171-209" reason="Batch processing test pattern. Verify 500 stocks processed in batches, graceful degradation on failures, aggregate statistics." />
+      <artifact path="backend/tests/test_crud/test_market_data.py" kind="test" symbol="" lines="" reason="Unit test pattern for sentiment_data CRUD operations. Follow patterns for create, get latest, get history, data freshness queries." />
+    </code>
+    <dependencies>
+      <node>
+        <!-- Frontend not required for this story -->
+      </node>
+      <python>
+        <package name="fastapi" version=">=0.109.2" />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" />
+        <package name="apscheduler[sqlalchemy]" version=">=3.10.0" />
+        <package name="httpx" version=">=0.23.3" />
+        <package name="pytest" version=">=7.2.2" />
+        <package name="pytest-asyncio" version=">=0.21.0" />
+        <package name="tweepy" version="latest" note="NEW - Twitter API client library (or python-twitter, twitter-api-v2)" />
+        <package name="vaderSentiment" version="latest" note="NEW - Sentiment analysis library (or textblob)" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Follow Pattern 1 (Multi-Source Sentiment Aggregation): Store sentiment with source attribution (source='twitter'), prepare for future aggregation with Story 2.4 web scraping sources. Each collector should be independent and fail gracefully.</constraint>
+    <constraint type="architecture">Follow Pattern 4 (Hourly Batch Processing with Graceful Degradation): Process 500 stocks in batches (50 per batch, may need smaller if Twitter API limits require), partial success acceptable, retry failed stocks next cycle.</constraint>
+    <constraint type="architecture">Use async SQLAlchemy patterns throughout: AsyncSession, select() statements, async functions. No synchronous database operations.</constraint>
+    <constraint type="architecture">Database schema from Story 1.2: sentiment_data table with id (UUID), stock_id (UUID foreign key indexed), sentiment_score (DECIMAL(3,2) range -1.0 to 1.0), source (VARCHAR(50)), timestamp (TIMESTAMP indexed), created_at.</constraint>
+    <constraint type="technology">APScheduler 3.x with async support required. Job runs hourly at minute 5 (offset from market data job at minute 0) to avoid resource contention.</constraint>
+    <constraint type="technology">Twitter API v2 recommended (v1.1 deprecated). Use free tier (500 tweets/month) or basic tier (higher limits). Respect rate limits strictly to avoid API key revocation.</constraint>
+    <constraint type="technology">Sentiment normalization: Convert to -1.0 to 1.0 scale (-1.0 = negative, 0.0 = neutral, 1.0 = positive). Store as DECIMAL(3,2) in database.</constraint>
+    <constraint type="testing">Use pytest with async support (pytest-asyncio). Mock external Twitter API calls using responses library or httpx AsyncClient. Test real database operations.</constraint>
+    <constraint type="testing">Coverage target: 80%+ for backend services (per Tech Spec). Include unit tests (service, CRUD), integration tests (scheduled task, batch processing), and performance tests.</constraint>
+    <constraint type="logging">Structured logging pattern: logger.info('Twitter sentiment collected', extra={'stock_id': stock_id, 'sentiment_score': score}). Log batch processing results, rate limit events, errors.</constraint>
+    <constraint type="error-handling">Exponential backoff retry: 3 retries with delays [1s, 2s, 4s] following Story 2.2 pattern. Handle API rate limit exceeded (429), API unavailable (503), authentication errors (401), timeout errors.</constraint>
+    <constraint type="performance">Process 500 stocks hourly within processing window (target: <30 minutes for full batch, but may vary based on Twitter API rate limits). Partial success acceptable (e.g., 450/500 stocks updated).</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Twitter API v2 Search" kind="REST endpoint" signature="GET /2/tweets/search/recent?query={stock_symbol OR company_name}&amp;max_results=100" path="External API" note="Twitter API v2 endpoint for searching recent tweets. Use Bearer token authentication. Rate limits: Free tier (500 tweets/month), Basic tier (varies)." />
+    <interface name="SentimentData Model" kind="Database model" signature="class SentimentData(Base): id: UUID, stock_id: UUID, sentiment_score: Decimal, source: str, timestamp: datetime" path="backend/app/models/sentiment_data.py" note="Database model for sentiment data storage. Fields match Tech Spec schema exactly." />
+    <interface name="create_sentiment_data" kind="Function signature" signature="async def create_sentiment_data(session: AsyncSession, stock_id: UUID, sentiment_score: float, source: str, timestamp: datetime) -> SentimentData" path="backend/app/crud/sentiment_data.py" note="CRUD function to create sentiment data records. Follow pattern from create_market_data." />
+    <interface name="get_latest_sentiment_data" kind="Function signature" signature="async def get_latest_sentiment_data(session: AsyncSession, stock_id: UUID) -> SentimentData | None" path="backend/app/crud/sentiment_data.py" note="CRUD function to retrieve latest sentiment for a stock. Follow pattern from get_latest_market_data." />
+    <interface name="collect_twitter_sentiment" kind="Function signature" signature="async def collect_twitter_sentiment(stock_symbol: str, company_name: str) -> dict[str, Any] | None" path="backend/app/services/sentiment_service.py" note="Service function to collect sentiment from Twitter API. Returns dict with sentiment_score (float -1.0 to 1.0) and timestamp (datetime UTC). Returns None on failure." />
+    <interface name="collect_twitter_sentiment_job" kind="APScheduler job" signature="async def collect_twitter_sentiment_job() -> None" path="backend/app/tasks/sentiment.py" note="APScheduler scheduled job. Triggers hourly at minute 5. Processes all 500 stocks in batches with graceful degradation." />
+    <interface name="RateLimiter" kind="Class" signature="class RateLimiter: async def wait_if_needed() -> None" path="backend/app/services/sentiment_service.py" note="Rate limiter class for Twitter API calls. Track calls per minute/hour/day, enforce delays between calls, handle rate limit exceeded errors." />
+  </interfaces>
+
+  <tests>
+    <standards>Testing uses pytest with async support (pytest-asyncio). Mock external Twitter API calls using responses library or httpx AsyncClient, but test real database operations. Test files organized in backend/tests/test_crud/ (unit tests for CRUD) and backend/tests/test_api/ (integration tests for services and scheduled tasks). Use db_session fixture from conftest.py for database tests. Coverage target: 80%+ for backend services per Tech Spec.</standards>
+    <locations>
+      <location>backend/tests/test_crud/test_sentiment_data.py</location>
+      <location>backend/tests/test_api/test_twitter_sentiment_collection.py</location>
+      <location>backend/tests/test_api/test_twitter_sentiment_performance.py</location>
+    </locations>
+    <ideas>
+      <idea ac="AC1">Test Twitter API client configuration: Verify API credentials loaded from environment variables, verify authentication succeeds, verify API endpoint connection.</idea>
+      <idea ac="AC2">Test tweet search logic: Mock Twitter API responses with tweets mentioning stock symbol, verify search query construction, verify company name search, test edge cases (no tweets found, special characters in stock symbol).</idea>
+      <idea ac="AC3">Test APScheduler job execution: Verify job runs on schedule (hourly at minute 5), verify job triggered from lifetime.py startup, test job overlap prevention (max_instances=1), test job idempotency.</idea>
+      <idea ac="AC4">Test sentiment calculation: Test positive/negative/neutral classification using mock tweet text, verify normalization to [-1.0, 1.0] range, test edge cases (all positive tweets, all negative tweets, mixed sentiment, empty tweet list).</idea>
+      <idea ac="AC5">Test database storage: Verify sentiment_data records created with correct fields (stock_id, sentiment_score, source='twitter', timestamp), verify foreign key relationships, verify timestamp indexing works for queries.</idea>
+      <idea ac="AC6">Test rate limiting: Verify delays between API calls, verify rate limit exceeded error handling (429), verify retry after rate limit window resets, test monthly limit tracking for free tier (500 tweets/month).</idea>
+      <idea ac="AC7">Test retry logic: Mock API failures (503, timeout), verify exponential backoff delays (1s, 2s, 4s), verify max retries limit (3 attempts), verify graceful failure after max retries, test authentication error (401) handling.</idea>
+      <idea ac="AC3,AC7">Test batch processing: Verify 500 stocks processed in batches (50 per batch), verify graceful degradation (continue with partial failures), verify aggregate statistics logged, verify failed stocks retry on next cycle.</idea>
+      <idea ac="AC2,AC3,AC6">Test performance: Verify 500 stocks processed within time constraints (considering Twitter API rate limits), verify rate limiting doesn't exceed API limits, verify database query performance uses timestamp index efficiently.</idea>
+    </ideas>
+  </tests>
+</story-context>
+

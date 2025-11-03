@@ -1,0 +1,153 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.2</storyId>
+    <title>Database Schema Design</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-2-database-schema-design.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>PostgreSQL database schema designed and implemented for users, stocks, recommendations, and sentiment data</iWant>
+    <soThat>data can be stored and retrieved efficiently</soThat>
+    <tasks>
+- [ ] Create SQLAlchemy models for all tables (AC: 1-6)
+- [ ] Define foreign key relationships between tables (AC: 8)
+- [ ] Add indexes for query performance (AC: 7)
+- [ ] Create Alembic migration for schema (AC: 1-8)
+- [ ] Re-enable startup tasks in lifetime.py (AC: related to Story 1.1 follow-up)
+- [ ] Add database connection check to health endpoint (AC: related to Story 1.1 follow-up)
+- [ ] Create Pydantic schemas for API validation (AC: 1-6, preparation for future stories)
+- [ ] Testing: Unit tests for models (AC: 1-8)
+- [ ] Testing: Integration test for migration (AC: 7)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Users table with: id, email, password_hash, tier (free/premium), created_at, updated_at
+2. User_preferences table with: user_id, holding_period, risk_tolerance, updated_at
+3. Stocks table with: symbol, company_name, sector, fortune_500_rank
+4. Market_data table with: stock_id, price, volume, timestamp
+5. Sentiment_data table with: stock_id, sentiment_score, source, timestamp
+6. Recommendations table with: id, user_id, stock_id, signal, confidence_score, risk_level, explanation, created_at
+7. All tables have appropriate indexes for query performance
+8. Foreign key relationships properly defined
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-1.md" title="Epic Technical Specification: Foundation & User Authentication" section="Data Models and Contracts">
+        Database schema definitions for all tables: Users (extends SQLAlchemyBaseUserTableUUID), UserPreferences, Stocks, MarketData, SentimentData, Recommendations. Includes column types, relationships, and constraints.
+      </doc>
+      <doc path="dist/epics.md" title="OpenAlpha - Epic Breakdown" section="Story 1.2: Database Schema Design">
+        Acceptance criteria for all database tables with specific column requirements and indexes for query performance.
+      </doc>
+      <doc path="dist/PRD.md" title="OpenAlpha Product Requirements Document" section="User Account & Authentication (FR001-FR004)">
+        Functional requirements for user data storage, preferences management, tier enforcement, and account data persistence.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Data Architecture">
+        Database schema structure, naming conventions, foreign key relationships, indexing strategy, and SQLAlchemy model patterns using async support.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Implementation Patterns">
+        Naming conventions for database tables (plural, lowercase with underscores), column naming (lowercase with underscores), Python file organization patterns.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Technology Stack Details">
+        SQLAlchemy 2.0.x with async support, Alembic for migrations, asyncpg driver, FastAPI Users integration patterns.
+      </doc>
+      <doc path="docs/stories/1-1-project-infrastructure-setup.md" title="Story 1.1: Project Infrastructure Setup" section="Dev Agent Record">
+        Learnings from previous story: SQLAlchemy conversion complete, database configuration available, Alembic migrations configured, pending items to address.
+      </doc>
+    </docs>
+    <code>
+      <file path="backend/app/users/models.py" kind="model" symbol="User" lines="1-28" reason="Existing User model extends SQLAlchemyBaseUserTableUUID and TimeStampedModel. Reference pattern for creating other models. Note: User model exists but needs tier field added.">
+      </file>
+      <file path="backend/app/db/config.py" kind="configuration" symbol="Base, async_session_maker, get_db" lines="1-36" reason="SQLAlchemy async database configuration. Base declarative_base for models. AsyncSession factory and dependency for FastAPI routes. Use this for all model definitions.">
+      </file>
+      <file path="backend/app/db/models.py" kind="model" symbol="TimeStampedModel" lines="1-24" reason="Base model class with created_at and updated_at timestamps. Inherit from this for models that need timestamp fields.">
+      </file>
+      <file path="backend/app/lifetime.py" kind="startup" symbol="startup" lines="1-7" reason="Startup tasks commented out waiting for SQLAlchemy models. Must re-enable and update to use new models in this story.">
+      </file>
+      <file path="backend/app/health.py" kind="endpoint" symbol="check_health" lines="1-27" reason="Health endpoint with hardcoded database_is_online. Must add actual database connection check in this story.">
+      </file>
+      <file path="backend/alembic/" kind="migration" symbol="alembic" reason="Alembic migration directory structure already configured. Use 'alembic revision --autogenerate' to generate migrations from models.">
+      </file>
+      <file path="backend/app/users/schemas.py" kind="schema" symbol="UserRead, UserCreate" reason="Existing Pydantic schemas for User model. Reference pattern for creating schemas for other models.">
+      </file>
+      <file path="backend/app/core/config.py" kind="configuration" symbol="Settings" reason="Application settings including DATABASE_URI configuration. Models will use these settings via database config.">
+      </file>
+    </code>
+    <dependencies>
+      <python>
+        <package name="sqlalchemy" version=">=2.0.0,&lt;3.0.0">ORM for database models and async operations</package>
+        <package name="alembic" version=">=1.13.0">Database migration tool</package>
+        <package name="fastapi-users[sqlalchemy]" version=">=10.4.1">FastAPI Users with SQLAlchemy backend for authentication</package>
+        <package name="asyncpg" version=">=0.29.0">PostgreSQL async driver</package>
+        <package name="psycopg2-binary" version=">=2.9.0">PostgreSQL adapter</package>
+        <package name="pydantic" version=">=1.10.6">Data validation for schemas</package>
+        <package name="pytest" version=">=7.2.2">Testing framework</package>
+        <package name="pytest-asyncio" version=">=0.21.0">Async test support</package>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>All models must inherit from Base (declarative_base from backend/app/db/config.py)</constraint>
+    <constraint>Use async SQLAlchemy patterns: AsyncSession, select() statements, async functions</constraint>
+    <constraint>Table naming: lowercase with underscores (users, user_preferences, stocks, market_data, sentiment_data, recommendations)</constraint>
+    <constraint>Column naming: lowercase with underscores (user_id, created_at, password_hash)</constraint>
+    <constraint>Users model must extend SQLAlchemyBaseUserTableUUID from FastAPI Users</constraint>
+    <constraint>Models needing timestamps must inherit from TimeStampedModel from backend/app/db/models.py</constraint>
+    <constraint>Use UUID primary keys for users and recommendations tables</constraint>
+    <constraint>Use ENUM types for tier (free/premium), holding_period (daily/weekly/monthly), risk_tolerance (low/medium/high), signal (buy/sell/hold), risk_level (low/medium/high)</constraint>
+    <constraint>All foreign keys must have indexes for query performance</constraint>
+    <constraint>Time-series columns (timestamp, created_at) must have indexes</constraint>
+    <constraint>Unique constraints: users.email, stocks.symbol, user_preferences.user_id (1:1 relationship)</constraint>
+    <constraint>Migrations must be created using Alembic (not Aerich)</constraint>
+    <constraint>Models organized in backend/app/models/ directory, one file per model</constraint>
+    <constraint>Schemas organized in backend/app/schemas/ directory, one file per model</constraint>
+    <constraint>All database operations must use async patterns with AsyncSession</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="SQLAlchemyBaseUserTableUUID" kind="class" signature="from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID" path="fastapi-users">
+      FastAPI Users base class providing id (UUID), email (VARCHAR 255, unique), password_hash, is_verified fields. User model must extend this.
+    </interface>
+    <interface name="Base" kind="class" signature="Base = declarative_base()" path="backend/app/db/config.py">
+      SQLAlchemy declarative base for all models. Import from backend/app/db/config.py.
+    </interface>
+    <interface name="TimeStampedModel" kind="class" signature="class TimeStampedModel(Base)" path="backend/app/db/models.py">
+      Abstract base model providing created_at and updated_at timestamp columns. Inherit from this for timestamp fields.
+    </interface>
+    <interface name="AsyncSession" kind="class" signature="async def get_db() -&gt; AsyncSession" path="backend/app/db/config.py">
+      Async database session dependency. Use async_session_maker() to create sessions. Dependency injection via Depends(get_db).
+    </interface>
+    <interface name="Alembic Migration" kind="command" signature="alembic revision --autogenerate -m 'message'" path="backend/alembic">
+      Generate migrations from SQLAlchemy models. Review generated migration before applying. Use 'alembic upgrade head' to apply.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use pytest with pytest-asyncio for async test support. Test files in backend/tests/ directory. Unit tests for models in backend/tests/test_models/. Integration tests for migrations in backend/tests/test_migrations/. Test fixtures: database session, test models. Follow pytest patterns from cookiecutter template.
+    </standards>
+    <locations>
+      backend/tests/test_models/ (unit tests for models)
+      backend/tests/test_migrations/ (integration tests for migrations)
+    </locations>
+    <ideas>
+      <test acId="1">Test Users model creation, read, update operations. Verify SQLAlchemyBaseUserTableUUID fields present.</test>
+      <test acId="2">Test UserPreferences model with foreign key relationship to User. Verify 1:1 constraint.</test>
+      <test acId="3">Test Stock model unique symbol constraint. Verify symbol lookup performance.</test>
+      <test acId="4">Test MarketData model with timestamp indexing. Verify time-series query performance.</test>
+      <test acId="5">Test SentimentData model with source tracking. Verify multi-source aggregation support.</test>
+      <test acId="6">Test Recommendation model with all foreign key relationships. Verify cascades.</test>
+      <test acId="7">Test migration creates all indexes correctly. Verify index performance in queries.</test>
+      <test acId="8">Test foreign key relationships and cascade behaviors. Verify delete constraints.</test>
+      <test acId="all">Integration test: migration up/down, verify schema matches models, test database connection health check.</test>
+    </ideas>
+  </tests>
+</story-context>
+

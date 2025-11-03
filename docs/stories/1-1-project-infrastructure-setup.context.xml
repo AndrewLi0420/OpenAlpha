@@ -1,0 +1,238 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Project Infrastructure Setup</title>
+    <status>drafted</status>
+    <generatedAt>2025-10-30 23:51</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-1-project-infrastructure-setup.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>project infrastructure (React frontend, FastAPI backend, PostgreSQL database, Redis cache) set up with Docker Compose and free-tier deployment configuration</iWant>
+    <soThat>I have a solid foundation for building features</soThat>
+    <tasks>
+      <task ac="1">
+        <title>Initialize React + TypeScript frontend with Vite</title>
+        <subtasks>
+          <subtask>Run `npm create vite@latest openalpha-frontend -- --template react-ts`</subtask>
+          <subtask>Verify project structure: `frontend/src/`, `frontend/public/`, `vite.config.ts`</subtask>
+          <subtask>Install and configure TypeScript: verify `tsconfig.json` exists</subtask>
+          <subtask>Test development server: `npm run dev` starts successfully</subtask>
+          <subtask>Verify TypeScript compilation: `npm run build` succeeds</subtask>
+        </subtasks>
+      </task>
+      <task ac="2">
+        <title>Initialize FastAPI backend with Python</title>
+        <subtasks>
+          <subtask>Run cookiecutter: `cookiecutter https://github.com/Tobi-De/cookiecutter-fastapi`</subtask>
+          <subtask>Configure project prompts (project name, description, etc.)</subtask>
+          <subtask>Verify project structure: `backend/app/`, `backend/tests/`, `alembic/`</subtask>
+          <subtask>Install dependencies: `pip install -r requirements.txt`</subtask>
+          <subtask>Verify FastAPI app starts: `uvicorn app.main:app --reload`</subtask>
+        </subtasks>
+      </task>
+      <task ac="3">
+        <title>Configure Docker Compose for PostgreSQL and Redis</title>
+        <subtasks>
+          <subtask>Create `docker-compose.yml` in project root</subtask>
+          <subtask>Configure PostgreSQL service: port 5432, environment variables (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB)</subtask>
+          <subtask>Configure Redis service: port 6379</subtask>
+          <subtask>Verify containers start: `docker-compose up -d`</subtask>
+          <subtask>Test database connection: connect to PostgreSQL from backend</subtask>
+          <subtask>Test Redis connection: connect to Redis from backend (optional for Epic 1)</subtask>
+        </subtasks>
+      </task>
+      <task ac="4">
+        <title>Establish frontend-backend API communication</title>
+        <subtasks>
+          <subtask>Configure frontend API client: create `frontend/src/services/api.ts` with Axios</subtask>
+          <subtask>Set up environment variable: `VITE_API_URL` for backend base URL</subtask>
+          <subtask>Configure CORS in FastAPI backend: allow frontend origin (localhost for dev, Vercel domain for production)</subtask>
+          <subtask>Create test endpoint in backend: `GET /api/v1/health`</subtask>
+          <subtask>Create test API call in frontend: fetch health endpoint on page load</subtask>
+          <subtask>Verify successful communication: frontend receives response from backend</subtask>
+        </subtasks>
+      </task>
+      <task ac="5">
+        <title>Configure environment variables for development and deployment</title>
+        <subtasks>
+          <subtask>Create frontend `.env.local`: `VITE_API_URL=http://localhost:8000`</subtask>
+          <subtask>Create frontend `.env.production`: `VITE_API_URL=https://openalpha-backend.onrender.com`</subtask>
+          <subtask>Create backend `.env.example`: template with required variables (DATABASE_URL, SECRET_KEY, etc.)</subtask>
+          <subtask>Create backend `.env` for local development: populate with local database URL</subtask>
+          <subtask>Document environment variable requirements in README</subtask>
+        </subtasks>
+      </task>
+      <task ac="6">
+        <title>Document free-tier deployment configuration</title>
+        <subtasks>
+          <subtask>Document Vercel frontend deployment: build command, output directory, environment variables</subtask>
+          <subtask>Document Render backend deployment: build command, start command, environment variables, PostgreSQL service</subtask>
+          <subtask>Document Supabase PostgreSQL alternative (if applicable)</subtask>
+          <subtask>Create deployment guide: `docs/deployment/` directory with step-by-step instructions</subtask>
+          <subtask>Include free-tier limits and constraints in documentation</subtask>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">React + TypeScript frontend project initialized with Vite</criterion>
+    <criterion id="2">FastAPI backend project initialized with Python</criterion>
+    <criterion id="3">PostgreSQL and Redis containers configured via Docker Compose</criterion>
+    <criterion id="4">Frontend and backend can communicate via API</criterion>
+    <criterion id="5">Environment variables configured for development and deployment</criterion>
+    <criterion id="6">Free-tier deployment configuration documented (Render, Supabase, Vercel)</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>dist/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Foundation & User Authentication</title>
+        <section>Story 1.1: Project Infrastructure Setup</section>
+        <snippet>Acceptance criteria for project infrastructure: React + TypeScript frontend with Vite, FastAPI backend with Python, PostgreSQL and Redis containers via Docker Compose, frontend-backend API communication, environment variables configuration, and free-tier deployment documentation.</snippet>
+      </doc>
+      <doc>
+        <path>dist/epics.md</path>
+        <title>OpenAlpha - Epic Breakdown</title>
+        <section>Story 1.1: Project Infrastructure Setup</section>
+        <snippet>As a developer, I want project infrastructure (React frontend, FastAPI backend, PostgreSQL database, Redis cache) set up with Docker Compose and free-tier deployment configuration, so that I have a solid foundation for building features.</snippet>
+      </doc>
+      <doc>
+        <path>dist/PRD.md</path>
+        <title>OpenAlpha Product Requirements Document</title>
+        <section>Platform Requirements (FR026-FR027)</section>
+        <snippet>Web-first responsive interface built with Tailwind CSS. Backend provides RESTful API for frontend consumption with responses optimized for less than 1 minute latency.</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Project Initialization</section>
+        <snippet>Frontend setup: npm create vite@latest openalpha-frontend -- --template react-ts. Backend setup: cookiecutter https://github.com/Tobi-De/cookiecutter-fastapi. Establishes React 18+, TypeScript, Vite build tooling, FastAPI framework, Python 3.x, project structure.</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Project Structure</section>
+        <snippet>Frontend in `frontend/` directory with Vite + React + TypeScript. Backend in `backend/app/` directory with FastAPI structure including api/v1/endpoints/, core/, crud/, db/, models/, schemas/. Alembic migrations in `backend/alembic/`.</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Decision Summary</section>
+        <snippet>Frontend Framework: React + TypeScript (React 18+, TS 5.x). Build Tool: Vite (Latest). Backend Framework: FastAPI (Latest). Database: PostgreSQL (15+). ORM: SQLAlchemy (2.0.x). Authentication: FastAPI Users (Latest).</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Development Environment</section>
+        <snippet>Frontend environment variables: VITE_API_URL=http://localhost:8000 in .env.local. Backend environment variables: DATABASE_URL (PostgreSQL connection string), SECRET_KEY (FastAPI secret key), RESEND_API_KEY (email service).</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Deployment Architecture</section>
+        <snippet>Frontend deployment on Vercel with build command `npm run build`, output directory `dist`, environment variable `VITE_API_URL` pointing to Render backend. Backend deployment on Render with Python 3.11+, build command `pip install -r requirements.txt`, start command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, PostgreSQL service included.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <!-- No existing code artifacts - this is the initial infrastructure setup story -->
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="react" version="18+"/>
+        <package name="react-dom" version="18+"/>
+        <package name="typescript" version="5.x"/>
+        <package name="vite" version="latest"/>
+        <package name="@tanstack/react-query" version="5.x"/>
+        <package name="axios" version="latest"/>
+        <package name="react-router-dom" version="latest"/>
+        <package name="tailwindcss" version="3.x"/>
+        <package name="postcss" version="latest"/>
+        <package name="autoprefixer" version="latest"/>
+      </ecosystem>
+      <ecosystem name="python">
+        <package name="fastapi" version="latest"/>
+        <package name="fastapi-users[sqlalchemy]" version="latest"/>
+        <package name="sqlalchemy" version="2.0.x"/>
+        <package name="alembic" version="latest"/>
+        <package name="pydantic" version="latest"/>
+        <package name="psycopg2-binary" version="latest"/>
+        <package name="resend" version="latest"/>
+        <package name="python-multipart" version="latest"/>
+        <package name="uvicorn[standard]" version="latest"/>
+      </ecosystem>
+      <ecosystem name="docker">
+        <package name="postgresql" version="15+"/>
+        <package name="redis" version="latest"/>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <type>Architecture</type>
+      <description>Frontend must use React 18+ with TypeScript 5.x, built with Vite. Backend must use FastAPI with Python 3.11+. Project structure follows CookieCutter FastAPI template with api/v1/endpoints/, core/, crud/, db/, models/, schemas/ directories.</description>
+      <source>dist/architecture.md#project-structure</source>
+    </constraint>
+    <constraint>
+      <type>Database</type>
+      <description>PostgreSQL 15+ required. Use SQLAlchemy 2.0.x ORM with Alembic migrations. Database connection via async SQLAlchemy with connection string from DATABASE_URL environment variable.</description>
+      <source>dist/architecture.md#decision-summary</source>
+    </constraint>
+    <constraint>
+      <type>API Communication</type>
+      <description>Frontend-backend communication via REST API using Axios. Base URL from VITE_API_URL environment variable. CORS must be configured in FastAPI backend to allow frontend origin (localhost for dev, Vercel domain for production).</description>
+      <source>dist/architecture.md#integration-points</source>
+    </constraint>
+    <constraint>
+      <type>Deployment</type>
+      <description>Free-tier deployment: Vercel for frontend (build command: npm run build, output: dist), Render for backend (build: pip install -r requirements.txt, start: uvicorn app.main:app). Render PostgreSQL service included in free tier.</description>
+      <source>dist/architecture.md#deployment-architecture</source>
+    </constraint>
+    <constraint>
+      <type>Development Environment</type>
+      <description>Local development uses Docker Compose for PostgreSQL and Redis. Frontend development server runs on localhost (Vite default port). Backend development server runs on localhost:8000. Environment variables stored in .env.local (frontend) and .env (backend).</description>
+      <source>dist/architecture.md#development-environment</source>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <!-- No existing interfaces - this story establishes the initial API structure -->
+    <interface>
+      <name>GET /api/v1/health</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/health - Health check endpoint for testing frontend-backend communication</signature>
+      <path>backend/app/api/v1/endpoints/health.py (to be created)</path>
+    </interface>
+    <interface>
+      <name>Frontend API Client</name>
+      <kind>Service function</kind>
+      <signature>Axios instance configured with baseURL from VITE_API_URL, interceptors for auth headers</signature>
+      <path>frontend/src/services/api.ts (to be created)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>No tests required for this infrastructure setup story. Testing infrastructure will be established in Story 1.2 (Database Schema Design) when database models are created. Future tests should use pytest for backend (with pytest-asyncio for async FastAPI tests) and React Testing Library with Jest for frontend.</standards>
+    <locations>
+      <location>backend/tests/</location>
+      <location>frontend/src/**/*.test.tsx</location>
+      <location>frontend/src/**/*.test.ts</location>
+    </locations>
+    <ideas>
+      <!-- No specific test ideas for infrastructure setup - manual verification of setup steps suffices -->
+      <idea ac="1">Manual verification: Vite dev server starts, TypeScript compilation succeeds, project structure matches expected layout</idea>
+      <idea ac="2">Manual verification: FastAPI app starts with uvicorn, project structure matches CookieCutter template, dependencies install correctly</idea>
+      <idea ac="3">Manual verification: Docker Compose containers start, PostgreSQL connection works, Redis connection works (optional)</idea>
+      <idea ac="4">Manual verification: Health endpoint responds, frontend can fetch from backend, CORS configured correctly</idea>
+      <idea ac="5">Manual verification: Environment variables load correctly in both frontend and backend, .env.example template is complete</idea>
+      <idea ac="6">Manual verification: Deployment documentation is complete, includes all required steps for Vercel and Render, free-tier limits documented</idea>
+    </ideas>
+  </tests>
+</story-context>
+

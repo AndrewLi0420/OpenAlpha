@@ -1,0 +1,80 @@
+# generated: 2025-10-30 23:33
+# project: Vibecoding
+# project_key: Vibecoding
+# tracking_system: file-system
+# story_location: "{project-root}/docs/stories"
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-10-30 23:33
+project: Vibecoding
+project_key: Vibecoding
+tracking_system: file-system
+story_location: "{project-root}/docs/stories"
+
+development_status:
+  epic-1: contexted
+  1-1-project-infrastructure-setup: done
+  1-2-database-schema-design: done
+  1-3-user-registration: done
+  1-4-user-authentication-session-management: in-progress
+  1-5-user-profile-preferences-management: done
+  1-6-freemium-tier-enforcement: done
+  1-7-responsive-ui-foundation-with-tailwind-css: done
+  epic-1-retrospective: optional
+
+  epic-2: contexted
+  2-1-fortune-500-stock-data-setup: done
+  2-2-market-data-collection-pipeline: done
+  2-3-twitter-sentiment-collection: deferred-to-v2
+  2-4-additional-sentiment-sources-web-scraping: done
+  2-5-ml-model-training-infrastructure: backlog
+  2-6-ml-model-inference-service: backlog
+  2-7-risk-assessment-calculation: backlog
+  2-8-recommendation-generation-logic: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-recommendation-dashboard-list-view: backlog
+  3-2-recommendation-detail-view: backlog
+  3-3-stock-search-functionality: backlog
+  3-4-recommendation-explanations-with-transparency: backlog
+  3-5-educational-tooltips-inline-help: backlog
+  3-6-recommendation-filtering-sorting: backlog
+  3-7-freemium-tier-stock-limit-enforcement-in-ui: backlog
+  3-8-user-preference-integration-with-recommendations: backlog
+  3-9-responsive-mobile-optimization: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-historical-recommendations-view: backlog
+  4-2-time-series-price-charts: backlog
+  4-3-recommendation-history-visualization: backlog
+  4-4-historical-sentiment-visualization: backlog
+  4-5-performance-context-for-historical-recommendations: backlog
+  4-6-advanced-filtering-for-historical-data: backlog
+  epic-4-retrospective: optional
+

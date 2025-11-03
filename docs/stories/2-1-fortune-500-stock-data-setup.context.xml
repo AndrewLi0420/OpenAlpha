@@ -1,0 +1,251 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.1</storyId>
+    <title>Fortune 500 Stock Data Setup</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-1-fortune-500-stock-data-setup.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system</asA>
+    <iWant>Fortune 500 stock list loaded into database with metadata</iWant>
+    <soThat>recommendations can be generated for these stocks</soThat>
+    <tasks>
+- [ ] Create database model for stocks table (AC: 1, 2)
+  - [ ] Verify stocks table exists in schema (from Story 1.2: database schema)
+  - [ ] Review `backend/app/models/stock.py` model definition
+  - [ ] Ensure model has: id (UUID), symbol (VARCHAR, unique), company_name (VARCHAR), sector (VARCHAR), fortune_500_rank (INTEGER)
+  - [ ] Verify indexes: symbol indexed for lookup efficiency (AC: 4)
+  - [ ] Add model fields if missing: created_at, updated_at timestamps
+  - [ ] Verify foreign key relationships (market_data, sentiment_data, recommendations reference stocks)
+
+- [ ] Create Fortune 500 stock data source (AC: 1, 2)
+  - [ ] Research Fortune 500 stock data sources (CSV file, API, web scraping)
+  - [ ] Select data source: CSV file (Fortune 500 list), API (Fortune API if available), or manual compilation
+  - [ ] Create data file: `backend/data/fortune_500_stocks.csv` or similar
+  - [ ] Ensure data includes: symbol, company_name, sector, fortune_500_rank for all 500 stocks
+  - [ ] Validate data format: CSV headers match database columns
+  - [ ] Store data file in version control or document data source
+
+- [ ] Create stock import script/service (AC: 1, 2, 3)
+  - [ ] Create `backend/app/services/stock_import_service.py` or `backend/app/scripts/import_stocks.py`
+  - [ ] Implement CSV reading logic (use Python csv module or pandas)
+  - [ ] Implement database insertion: Bulk insert or batch insert stocks into stocks table
+  - [ ] Handle duplicate symbols: Update existing stocks or skip (idempotent import)
+  - [ ] Validate data completeness: Verify all 500 stocks imported (count query after import)
+  - [ ] Add error handling: Log import failures, handle invalid data rows
+  - [ ] Add progress logging: Log import progress (e.g., "Imported 100/500 stocks")
+
+- [ ] Implement data validation (AC: 3)
+  - [ ] Create validation function: Check stock count equals 500 after import
+  - [ ] Validate required fields: symbol, company_name, sector, fortune_500_rank not null
+  - [ ] Validate data types: symbol is string, fortune_500_rank is integer, sector is string
+  - [ ] Validate symbol format: Symbols are uppercase, 1-5 characters (e.g., "AAPL", "BRK.A")
+  - [ ] Create validation script: `backend/app/scripts/validate_stocks.py`
+  - [ ] Add validation to import script: Run validation after import completes
+  - [ ] Log validation results: Report missing stocks or invalid data
+
+- [ ] Create stock lookup functionality (AC: 4)
+  - [ ] Create CRUD operation: `backend/app/crud/stocks.py` with `get_stock_by_symbol()`, `get_stock_by_name()`, `search_stocks()`
+  - [ ] Implement symbol lookup: Query stocks table by symbol (case-insensitive)
+  - [ ] Implement name lookup: Query stocks table by company_name (partial match support)
+  - [ ] Verify index usage: Ensure symbol index used for efficient lookups
+  - [ ] Add error handling: Return None or raise exception if stock not found
+  - [ ] Test lookup performance: Verify query time <100ms for single stock lookup
+
+- [ ] Create admin endpoint/script for stock refresh (AC: 5)
+  - [ ] Create admin endpoint: `POST /api/v1/admin/stocks/refresh` (or protected admin route)
+  - [ ] Alternative: Create CLI script: `python manage.py import-stocks` or `python -m backend.app.scripts.import_stocks`
+  - [ ] Endpoint/script triggers stock import service
+  - [ ] Add authentication: Require admin user or service token for security
+  - [ ] Return import status: Response includes count imported, validation results
+  - [ ] Add logging: Log admin refresh actions for audit trail
+  - [ ] Document usage: Add README or docstring for admin script usage
+
+- [ ] Create initial data loading script (AC: 1, 3)
+  - [ ] Create `backend/app/initial_data.py` or extend existing initial data script
+  - [ ] Add function: `load_fortune_500_stocks()` to import stocks on first setup
+  - [ ] Integrate with database setup: Call on initial database creation or migration
+  - [ ] Make idempotent: Check if stocks already exist before importing
+  - [ ] Add to setup documentation: Document how to run initial data load
+
+- [ ] Testing: Unit tests for stock model and CRUD (AC: 2, 4)
+  - [ ] Test stock model: Verify fields, constraints, relationships
+  - [ ] Test stock CRUD operations: Create, read, update, delete stock records
+  - [ ] Test symbol lookup: Verify case-insensitive lookup works
+  - [ ] Test name lookup: Verify partial name matching works
+  - [ ] Test duplicate handling: Verify duplicate symbol handling (update vs skip)
+  - [ ] Use pytest with async support (`pytest-asyncio`)
+  - [ ] Create test fixtures: Sample stock data for testing
+
+- [ ] Testing: Integration tests for stock import (AC: 1, 3)
+  - [ ] Test stock import service: Verify CSV import creates stock records
+  - [ ] Test validation: Verify validation catches missing stocks or invalid data
+  - [ ] Test idempotent import: Verify re-import doesn't create duplicates
+  - [ ] Test admin endpoint: Verify admin refresh endpoint triggers import
+  - [ ] Use FastAPI TestClient for endpoint testing (AsyncClient)
+  - [ ] Verify database state: Check stocks table after import
+
+- [ ] Testing: Performance tests for stock lookup (AC: 4)
+  - [ ] Test lookup performance: Verify symbol lookup completes <100ms
+  - [ ] Test search performance: Verify name search completes <200ms
+  - [ ] Test bulk lookup: Verify fetching all 500 stocks completes <500ms
+  - [ ] Verify index usage: Check query plan uses symbol index
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Fortune 500 stock list imported into stocks table
+2. Each stock has: symbol, company_name, sector, fortune_500_rank
+3. Data validated for completeness (all 500 stocks present)
+4. Stock lookup by symbol or name works efficiently
+5. Admin script/endpoint to refresh stock list if needed
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic Technical Specification: Data Pipeline & ML Engine" section="Services and Modules">
+        Stock Import Service definition with responsibilities, inputs, outputs, and location. Specifies CSV parsing, database insertion, validation, and duplicate handling.
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic Technical Specification: Data Pipeline & ML Engine" section="Data Models and Contracts">
+        Stocks table schema specification with exact field types: id (UUID), symbol (VARCHAR(10), unique, indexed), company_name, sector, fortune_500_rank, created_at, updated_at. Indexes and relationships documented.
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic Technical Specification: Data Pipeline & ML Engine" section="Acceptance Criteria (Authoritative)">
+        Authoritative acceptance criteria list for Story 2.1 with all 5 criteria numbered and specified.
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic Technical Specification: Data Pipeline & ML Engine" section="Traceability Mapping">
+        Mapping of AC 2.1.1-2.1.5 to PRD references, architecture references, components, and test ideas. Shows AC → Component relationship.
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic Technical Specification: Data Pipeline & ML Engine" section="Performance">
+        Performance targets: stock lookup <100ms, bulk import <30 seconds for 500 stocks, bulk lookup <500ms. Optimization strategies documented.
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic Technical Specification: Data Pipeline & ML Engine" section="Test Strategy Summary">
+        Test coverage targets: 80%+ for backend services. Unit, integration, and performance test requirements. Edge cases and security tests specified.
+      </doc>
+      <doc path="dist/epics.md" title="OpenAlpha - Epic Breakdown" section="Story 2.1: Fortune 500 Stock Data Setup">
+        Story definition with acceptance criteria, prerequisites (Story 1.2), and user story statement.
+      </doc>
+      <doc path="dist/PRD.md" title="OpenAlpha Product Requirements Document" section="FR005: Fortune 500 Stock Coverage">
+        Functional requirement: System covers all Fortune 500 stocks for recommendations. Stock metadata (symbol, name, sector) accessible.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Data Architecture">
+        Database schema structure, indexing strategy (stocks.symbol unique index), foreign key relationships. Stocks table referenced by market_data, sentiment_data, recommendations.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Project Structure">
+        Backend file organization: models in backend/app/models/, crud in backend/app/crud/, services in backend/app/services/, scripts in backend/app/scripts/. Naming conventions for Python files, functions, classes.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Implementation Patterns">
+        Naming conventions: Python files snake_case, functions snake_case, classes PascalCase. Database tables plural lowercase with underscores, columns lowercase with underscores.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture - OpenAlpha" section="Performance Considerations">
+        API performance targets <500ms, database queries <200ms. Index usage for efficient lookups. Stock lookup optimization strategies.
+      </doc>
+      <doc path="docs/stories/1-2-database-schema-design.md" title="Story 1.2: Database Schema Design" section="Dev Agent Record">
+        Learnings: Stock model created with symbol (unique, indexed), company_name, sector, fortune_500_rank. Migration pattern established with Alembic. Model relationships defined.
+      </doc>
+      <doc path="docs/stories/1-7-responsive-ui-foundation-with-tailwind-css.md" title="Story 1.7: Responsive UI Foundation" section="Dev Agent Record">
+        Database schema foundation established in Story 1.2. File organization patterns: backend/app/services/ for business logic, backend/app/crud/ for database operations. Testing infrastructure patterns.
+      </doc>
+    </docs>
+    <code>
+      <file path="backend/app/models/stock.py" kind="model" symbol="Stock" lines="12-33" reason="Stock model already exists from Story 1.2. Verify fields match requirements: id (UUID), symbol (String(10), unique), company_name, sector, fortune_500_rank. Symbol index exists (ix_stocks_symbol). Relationships to market_data, sentiment_data, recommendations already defined.">
+      </file>
+      <file path="backend/app/schemas/stock.py" kind="schema" symbol="StockBase, StockCreate, StockUpdate, StockRead" lines="8-33" reason="Pydantic schemas for Stock model already exist. StockCreate schema for import operations. StockRead schema with from_attributes for API responses.">
+      </file>
+      <file path="backend/app/crud/users.py" kind="crud" symbol="get_user_preferences, upsert_user_preferences" lines="14-54" reason="CRUD operation pattern reference. Uses async SQLAlchemy patterns: select(), scalar_one_or_none(), session.commit(). Follow this pattern for stock CRUD operations (get_stock_by_symbol, get_stock_by_name, search_stocks).">
+      </file>
+      <file path="backend/app/db/config.py" kind="configuration" symbol="Base, async_session_maker, get_db" lines="1-36" reason="SQLAlchemy async database configuration. Base declarative_base for models. AsyncSession factory. get_db() dependency for FastAPI routes. Use AsyncSession for all database operations.">
+      </file>
+      <file path="backend/app/db/models.py" kind="model" symbol="TimeStampedModel" lines="8-23" reason="Base model class with created_at and updated_at timestamps. Stock model should inherit from this if timestamps needed. Note: Stock model currently doesn't extend TimeStampedModel - may need to add timestamps.">
+      </file>
+      <file path="backend/app/initial_data.py" kind="initialization" symbol="create_superuser" lines="1-23" reason="Initial data loading pattern. Add load_fortune_500_stocks() function here following same pattern. Use async session, check if data exists (idempotent), log actions.">
+      </file>
+      <file path="backend/alembic/versions/ed366b9039e4_initial_schema.py" kind="migration" symbol="upgrade, downgrade" lines="24-32" reason="Existing Alembic migration showing stocks table creation pattern. Symbol index created (ix_stocks_symbol, unique). Use this as reference for verifying migration structure.">
+      </file>
+      <file path="backend/tests/test_models/test_stock.py" kind="test" reason="Existing unit tests for Stock model. Reference test patterns, fixtures, async test structure. Add tests for import, validation, lookup operations.">
+      </file>
+      <file path="backend/tests/test_crud/test_user_preferences.py" kind="test" reason="CRUD test pattern reference. Follow async test patterns with pytest-asyncio. Test fixtures for database session. Use as template for stock CRUD tests.">
+      </file>
+      <file path="backend/tests/test_api/test_registration_endpoint.py" kind="test" reason="API endpoint test pattern reference. Uses FastAPI TestClient (AsyncClient). Test fixtures, async test structure. Use for testing admin endpoint if created.">
+      </file>
+    </code>
+    <dependencies>
+      <python>
+        <package name="sqlalchemy" version=">=2.0.0,&lt;3.0.0">ORM for database models and async operations. Stock model uses this.</package>
+        <package name="alembic" version=">=1.13.0">Database migration tool. Stock table migration already exists.</package>
+        <package name="pydantic" version=">=1.10.6">Data validation for schemas. Stock schemas use this.</package>
+        <package name="pytest" version=">=7.2.2">Testing framework for unit and integration tests.</package>
+        <package name="pytest-asyncio" version=">=0.21.0">Async test support for testing async database operations.</package>
+        <package name="httpx" version=">=0.23.3">HTTP client (optional for API data source, if using API instead of CSV).</package>
+        <package name="fastapi" version=">=0.109.2">Web framework (if creating admin endpoint instead of CLI script).</package>
+        <package name="pandas" version="">Optional: CSV processing library (alternative to Python csv module for import service).</package>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Stock model already exists at backend/app/models/stock.py from Story 1.2. Verify fields match Tech Spec requirements before implementing import.</constraint>
+    <constraint>All database operations must use async SQLAlchemy patterns: AsyncSession, select() statements, async functions. Follow pattern from backend/app/crud/users.py.</constraint>
+    <constraint>Stock model extends Base from backend/app/db/config.py (not TimeStampedModel currently). Consider adding created_at/updated_at timestamps if needed.</constraint>
+    <constraint>Symbol field has unique index (ix_stocks_symbol). Use this index for efficient lookups. Ensure case-insensitive queries use proper SQL functions.</constraint>
+    <constraint>Stock import must be idempotent: re-importing should update existing stocks or skip duplicates without errors.</constraint>
+    <constraint>Validation must verify exactly 500 stocks imported. Count query after import completion.</constraint>
+    <constraint>Lookup performance targets: symbol lookup <100ms, name search <200ms, bulk fetch <500ms (per Tech Spec).</constraint>
+    <constraint>File organization: services in backend/app/services/, scripts in backend/app/scripts/, crud in backend/app/crud/. Follow naming: snake_case.py for files, snake_case for functions.</constraint>
+    <constraint>Testing: 80%+ coverage target for backend services (per Tech Spec). Unit tests in backend/tests/test_models/, integration tests in backend/tests/test_api/.</constraint>
+    <constraint>Error handling: Log import failures, handle invalid CSV rows gracefully, don't fail entire import if single row fails.</constraint>
+    <constraint>Admin endpoint (if created) requires authentication. Use existing auth patterns or service token for security.</constraint>
+    <constraint>Initial data loading should be idempotent: check if stocks exist before importing. Follow pattern from backend/app/initial_data.py create_superuser function.</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Stock Model" kind="class" signature="class Stock(Base)" path="backend/app/models/stock.py">
+      SQLAlchemy model for stocks table. Fields: id (UUID), symbol (String(10), unique), company_name, sector, fortune_500_rank. Relationships to market_data, sentiment_data, recommendations.
+    </interface>
+    <interface name="Stock Schemas" kind="Pydantic" signature="StockCreate, StockUpdate, StockRead" path="backend/app/schemas/stock.py">
+      Pydantic schemas for stock validation. StockCreate for import operations. StockRead for API responses (from_attributes=True).
+    </interface>
+    <interface name="AsyncSession" kind="dependency" signature="async def get_db() -&gt; AsyncSession" path="backend/app/db/config.py">
+      Async database session dependency. Use Depends(get_db) in FastAPI routes. Use async_session_maker() directly in scripts/services.
+    </interface>
+    <interface name="CRUD Pattern" kind="function" signature="async def get_*(session: AsyncSession, ...) -&gt; Model | None" path="backend/app/crud/users.py">
+      CRUD operation pattern using async SQLAlchemy. Use select() with where(), scalar_one_or_none() for single results. Follow pattern for stock CRUD operations.
+    </interface>
+    <interface name="GET /api/v1/stocks" kind="REST endpoint" signature="GET /api/v1/stocks" path="backend/app/api/v1/endpoints/">
+      Stock list endpoint (for Epic 3). Response: array of Stock objects. May need to create this endpoint or stock CRUD can support it.
+    </interface>
+    <interface name="GET /api/v1/stocks/{symbol}" kind="REST endpoint" signature="GET /api/v1/stocks/{symbol}" path="backend/app/api/v1/endpoints/">
+      Stock lookup by symbol endpoint (for Epic 3). Response: Stock object or 404. Requires stock CRUD get_stock_by_symbol() function.
+    </interface>
+    <interface name="POST /api/v1/admin/stocks/refresh" kind="REST endpoint" signature="POST /api/v1/admin/stocks/refresh" path="backend/app/api/v1/endpoints/">
+      Admin endpoint for refreshing stock list (optional AC: 5). Requires authentication. Triggers stock import service. Response: import status with count.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use pytest with pytest-asyncio for async test support. Test files organized in backend/tests/ directory. Unit tests for models/CRUD in backend/tests/test_models/ and backend/tests/test_crud/. Integration tests for services/API in backend/tests/test_api/. Test fixtures: database session (from conftest.py), test stock data. Follow async patterns from existing tests. Coverage target: 80%+ for backend services (per Tech Spec). Performance tests verify lookup <100ms, bulk operations <30s.
+    </standards>
+    <locations>
+      backend/tests/test_models/test_stock.py (unit tests for Stock model)
+      backend/tests/test_crud/test_stocks.py (CRUD operation tests - create this file)
+      backend/tests/test_api/test_stock_import.py (integration tests for import service/admin endpoint - create this file)
+    </locations>
+    <ideas>
+      <test acId="1">Test stock import service: CSV import creates 500 stock records in database. Verify idempotent behavior (re-import updates/skips).</test>
+      <test acId="2">Test Stock model fields: Verify id (UUID), symbol (unique), company_name, sector, fortune_500_rank match schema. Test model constraints.</test>
+      <test acId="3">Test validation function: Verify stock count equals 500 after import. Test validation catches missing stocks, invalid data types, malformed symbols.</test>
+      <test acId="4">Test stock lookup: get_stock_by_symbol() returns correct stock, case-insensitive lookup works, index used for efficient queries. Performance: <100ms.</test>
+      <test acId="4">Test name search: get_stock_by_name() partial match works, returns multiple results. Performance: <200ms.</test>
+      <test acId="4">Test bulk lookup: Fetching all 500 stocks completes <500ms. Verify index usage in query plan.</test>
+      <test acId="5">Test admin endpoint/script: POST /api/v1/admin/stocks/refresh triggers import, returns status. CLI script import-stocks works correctly.</test>
+      <test acId="1">Test initial data loading: load_fortune_500_stocks() imports stocks on first run, skips if already exist (idempotent).</test>
+      <test acId="all">Edge cases: Empty CSV, malformed CSV rows, duplicate symbols, missing required fields, invalid symbol formats, case-insensitive symbol lookup.</test>
+      <test acId="all">Integration test: Full import workflow from CSV file → database → validation → lookup operations. Verify end-to-end functionality.</test>
+    </ideas>
+  </tests>
+</story-context>
+

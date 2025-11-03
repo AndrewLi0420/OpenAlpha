@@ -1,0 +1,132 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.2</storyId>
+    <title>Market Data Collection Pipeline</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-2-market-data-collection-pipeline.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system</asA>
+    <iWant>collect hourly (or 5-minute if cost-effective) market data (price, volume) for Fortune 500 stocks from free financial APIs</iWant>
+    <soThat>ML models have current market data for predictions</soThat>
+    <tasks>
+- Create market data collection service (AC: 1, 3, 4)
+- Create market data CRUD operations (AC: 4)
+- Create APScheduler scheduled task (AC: 2)
+- Implement batch processing with graceful degradation (AC: 1, 5)
+- Implement retry logic for API failures (AC: 5)
+- Implement rate limiting (AC: 6)
+- Track data freshness (AC: 7)
+- Install APScheduler dependency (AC: 2)
+- Testing: Unit tests for market data collection service (AC: 1, 5, 6)
+- Testing: Integration tests for scheduled task (AC: 2, 5)
+- Testing: Performance tests for batch processing (AC: 1, 2)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Market data collection script/service using free APIs (Alpha Vantage, Yahoo Finance, or similar)
+2. Hourly (or configurable interval) scheduled job runs automatically
+3. Data collected: stock price, volume, timestamp
+4. Data stored in market_data table with proper timestamps
+5. Error handling for API failures (retry logic, logging)
+6. Rate limiting respected for free API tiers
+7. Data freshness tracked (last_update timestamp per stock)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.2: Market Data Collection Pipeline">
+        Primary technical specification for this story. Defines Market Data Collection Service, APScheduler task, batch processing workflow, performance requirements, and acceptance criteria.
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Services and Modules">
+        Defines Market Data Collection Service (backend/app/services/data_collection.py) and Market Data Task (backend/app/tasks/market_data.py) with responsibilities, inputs, and outputs.
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Workflows and Sequencing">
+        Market Data Collection Workflow: APScheduler triggers hourly, queries all 500 stocks, processes in batches of 50, calls API with rate limiting, stores in market_data table with graceful degradation.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Pattern 4: Hourly Batch Processing with Graceful Degradation">
+        Batch processing pattern for processing 500 stocks hourly with graceful degradation. Partial success acceptable, failed stocks retry on next cycle.
+      </doc>
+      <doc path="dist/architecture.md" title="Decision Architecture" section="Data Architecture">
+        Database schema overview including market_data table structure with stock_id foreign key, price, volume, timestamp indexed for time-series queries.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR006: Market Data Collection">
+        System collects hourly market data (price, volume) for Fortune 500 stocks. Data pipeline runs reliably on hourly schedule with stored timestamps for historical reference.
+      </doc>
+      <doc path="dist/epics.md" title="Epic Breakdown" section="Story 2.2: Market Data Collection Pipeline">
+        Story definition with user story statement and acceptance criteria for market data collection from free financial APIs with hourly scheduled jobs.
+      </doc>
+      <doc path="docs/stories/2-1-fortune-500-stock-data-setup.md" title="Story 2.1: Fortune 500 Stock Data Setup" section="Dev Agent Record">
+        Previous story learnings: Stock model patterns, CRUD operations, service patterns, testing patterns, async SQLAlchemy patterns, file organization.
+      </doc>
+    </docs>
+    <code>
+      <code path="backend/app/models/market_data.py" kind="model" symbol="MarketData" lines="1-37" reason="Market data model with stock_id foreign key, price DECIMAL(10,2), volume BIGINT, timestamp indexed. Relationship to Stock model. Indexes on stock_id and timestamp for time-series queries."/>
+      <code path="backend/app/schemas/market_data.py" kind="schema" symbol="MarketDataBase, MarketDataCreate, MarketDataRead" lines="1-34" reason="Pydantic schemas for market data validation: MarketDataBase, MarketDataCreate, MarketDataRead with stock_id UUID, price float, volume int, timestamp datetime."/>
+      <code path="backend/app/models/stock.py" kind="model" symbol="Stock" lines="1-33" reason="Stock model with id UUID, symbol unique indexed, company_name, sector, fortune_500_rank. Relationship to market_data. Use get_all_stocks() from CRUD to get all 500 stocks for batch processing."/>
+      <code path="backend/app/crud/stocks.py" kind="crud" symbol="get_all_stocks, get_stock_by_symbol" lines="47-110" reason="Stock CRUD operations: get_all_stocks() returns all Fortune 500 stocks for batch processing. get_stock_by_symbol() for lookups. Follow async SQLAlchemy patterns with AsyncSession, select() statements."/>
+      <code path="backend/app/services/stock_import_service.py" kind="service" symbol="import_stocks_from_csv" lines="17-142" reason="Service pattern reference: Async function with error handling, logging, validation. Use async/await patterns, structured logging, CSV parsing. Follow this pattern for data_collection.py service."/>
+      <code path="backend/app/tests/test_crud/test_stocks.py" kind="test" symbol="test_create_stock, test_get_stock_by_symbol" lines="1-198" reason="Test pattern reference: Use pytest with async support (@pytest.mark.asyncio), db_session fixture from conftest.py, async SQLAlchemy patterns. Follow this pattern for market_data CRUD tests."/>
+      <code path="backend/app/tests/conftest.py" kind="test" symbol="db_session" lines="11-59" reason="Test fixtures: db_session provides AsyncSession with in-memory SQLite database. All tables created/dropped per test. Use for market data tests."/>
+      <code path="backend/app/lifetime.py" kind="startup" symbol="startup" lines="4-6" reason="Application startup hook. Add APScheduler initialization here to register hourly market data collection job."/>
+      <code path="backend/app/main.py" kind="app" symbol="get_application" lines="20-77" reason="FastAPI application factory. Registers routers, CORS, database. Startup event calls lifetime.startup() where APScheduler should be initialized."/>
+      <code path="backend/app/core/config.py" kind="config" symbol="Settings" lines="38-81" reason="Application settings with Pydantic BaseSettings. Add ALPHA_VANTAGE_API_KEY or similar for financial data API credentials. DATABASE_URI and REDIS_URL already configured."/>
+    </code>
+    <dependencies>
+      <python>
+        <package name="apscheduler" version="3.x" reason="Background job scheduling for hourly market data collection. NOT YET INSTALLED - needs to be added to requirements.txt as 'apscheduler[sqlalchemy]' for PostgreSQL job store persistence."/>
+        <package name="httpx" version="&gt;=0.23.3" reason="HTTP client for async API calls to financial data APIs (Alpha Vantage, Yahoo Finance). Already installed in requirements.txt."/>
+        <package name="sqlalchemy" version="&gt;=2.0.0,&lt;3.0.0" reason="ORM for database operations. Already installed. Use async support (AsyncSession, select() statements)."/>
+        <package name="pytest" version="&gt;=7.2.2" reason="Testing framework. Already installed. Use with pytest-asyncio for async test support."/>
+        <package name="pytest-asyncio" version="&gt;=0.21.0" reason="Async test support for pytest. Already installed. Required for testing async functions."/>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use async SQLAlchemy patterns throughout: AsyncSession, select() statements, async functions. Follow patterns from backend/app/crud/stocks.py and backend/app/services/stock_import_service.py.</constraint>
+    <constraint>APScheduler 3.x required for background jobs with async support. Python 3.11+ compatibility required. Install with 'apscheduler[sqlalchemy]' for PostgreSQL job store.</constraint>
+    <constraint>Batch processing pattern: Process 500 stocks in batches of 50 to manage API rate limits. Use async/await for concurrent processing within rate limits. Partial success acceptable (don't fail entire pipeline if some stocks fail).</constraint>
+    <constraint>Rate limiting: Respect free-tier API limits (e.g., Alpha Vantage: 5 calls/minute). Add delays between API calls and batches. Handle rate limit exceeded errors with retry after window resets.</constraint>
+    <constraint>Error handling: Implement exponential backoff retry logic (3 retries with 1s, 2s, 4s delays). Handle API failures, invalid responses, missing data gracefully. Log all errors with structured logging.</constraint>
+    <constraint>Testing: Use pytest with async support. Mock external API calls using httpx AsyncClient or responses library. Test rate limiting, retry logic, batch processing, graceful degradation. Coverage target: 80%+ for backend services.</constraint>
+    <constraint>File organization: Services in backend/app/services/, CRUD in backend/app/crud/, models in backend/app/models/, tasks in backend/app/tasks/. Follow naming conventions: snake_case for files/functions, PascalCase for classes.</constraint>
+    <constraint>Performance: Process 500 stocks hourly within processing window (target: &lt;30 minutes). Batch processing time should complete within constraints. Database queries should use indexes efficiently (timestamp index for time-series queries).</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="Market Data Collection Service" kind="function" signature="async def collect_market_data(stock_symbol: str, session: AsyncSession) -&gt; dict[str, Any]" path="backend/app/services/data_collection.py">
+      Collects market data (price, volume, timestamp) from financial API for a single stock. Returns dict with price, volume, timestamp or None on failure. Handles rate limiting and retry logic internally.
+    </interface>
+    <interface name="Market Data CRUD" kind="functions" signature="async def create_market_data(session: AsyncSession, stock_id: UUID, price: float, volume: int, timestamp: datetime) -&gt; MarketData&#10;async def get_latest_market_data(session: AsyncSession, stock_id: UUID) -&gt; MarketData | None&#10;async def get_market_data_history(session: AsyncSession, stock_id: UUID, start_date: datetime, end_date: datetime) -&gt; list[MarketData]" path="backend/app/crud/market_data.py">
+      CRUD operations for market_data table: create new records, get latest data for a stock, get historical data with date range. Use async SQLAlchemy patterns.
+    </interface>
+    <interface name="APScheduler Job" kind="function" signature="async def collect_market_data() -&gt; None" path="backend/app/tasks/market_data.py">
+      Scheduled job function triggered hourly by APScheduler. Queries all stocks from stocks table, processes in batches of 50, calls collection service with rate limiting, stores results. Reports aggregate results.
+    </interface>
+    <interface name="Stock CRUD - get_all_stocks" kind="function" signature="async def get_all_stocks(session: AsyncSession) -&gt; list[Stock]" path="backend/app/crud/stocks.py">
+      Returns all Fortune 500 stocks for batch processing. Use this to get list of all stocks for market data collection job.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Use pytest with async support (@pytest.mark.asyncio) for all async function tests. Use db_session fixture from conftest.py for database operations. Mock external API calls using httpx AsyncClient or responses library to avoid hitting real APIs during tests. Follow test patterns from backend/tests/test_crud/test_stocks.py and backend/tests/test_api/test_stock_import.py. Coverage target: 80%+ for backend services. Test all critical paths: API client, rate limiting, retry logic, batch processing, graceful degradation, database operations.</standards>
+    <locations>backend/tests/test_crud/test_market_data.py (unit tests for CRUD operations), backend/tests/test_api/test_market_data_collection.py (integration tests for collection service and scheduled task), backend/tests/test_api/test_market_data_performance.py (performance tests for batch processing)</locations>
+    <ideas>
+      <test ac="1" idea="Unit test: Mock httpx AsyncClient to simulate API responses. Test successful data collection, invalid responses, missing data fields. Verify price and volume are parsed correctly."/>
+      <test ac="2" idea="Integration test: Mock APScheduler trigger, verify job executes, calls get_all_stocks(), processes stocks in batches of 50, calls collection service. Verify job doesn't overlap if previous run still running."/>
+      <test ac="3" idea="Unit test: Verify collected data includes price (float), volume (int), timestamp (datetime UTC). Test timestamp parsing from API response."/>
+      <test ac="4" idea="Integration test: Create market_data record, verify stored with correct stock_id, price, volume, timestamp. Query latest data using get_latest_market_data(). Verify timestamp index used in queries."/>
+      <test ac="5" idea="Unit test: Mock API failures (timeout, 500 error, rate limit exceeded). Verify exponential backoff retry logic (3 retries with 1s, 2s, 4s delays). Verify errors logged and function fails gracefully after max retries."/>
+      <test ac="6" idea="Unit test: Verify rate limiting delays between API calls. Test rate limit exceeded handling with retry after window resets. Mock multiple API calls and verify timing/delays."/>
+      <test ac="7" idea="Integration test: Track last_update timestamp per stock. Verify timestamp updated after successful collection. Query stocks with stale data (&gt;1 hour old)."/>
+      <test ac="1,2" idea="Performance test: Process 500 stocks in batches of 50. Verify total time &lt;30 minutes. Verify rate limiting respected (no more than 5 calls/minute if Alpha Vantage)."/>
+      <test ac="5" idea="Integration test: Simulate partial failures (some stocks succeed, some fail). Verify pipeline continues processing remaining stocks. Verify aggregate results logged correctly."/>
+    </ideas>
+  </tests>
+</story-context>

@@ -1,0 +1,286 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.6</storyId>
+    <title>Freemium Tier Enforcement</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-6-freemium-tier-enforcement.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system</asA>
+    <iWant>to enforce free tier limits (e.g., 5 stocks) and identify premium users</iWant>
+    <soThat>business model can be validated from launch</soThat>
+    <tasks>
+- Ensure user tier field in database (AC: 1)
+- Backend tier validation service (AC: 3, 4, 5)
+- Backend middleware/decorator for tier enforcement (AC: 3, 4)
+- Backend tier status endpoint (AC: 3, 6)
+- Frontend tier status display (AC: 6)
+- Frontend tier limit enforcement UI (AC: 4, 7)
+- Frontend tier status integration (AC: 6, 7)
+- Database user_stock_tracking table preparation (AC: 4)
+- Testing: Unit tests for tier service (AC: 3, 4, 5)
+- Testing: Integration tests for tier endpoints (AC: 3, 4, 6)
+- Testing: Frontend component tests (AC: 6, 7)
+- Testing: End-to-end tier enforcement flow (AC: 4, 7)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. User tier field (free/premium) in database
+2. Default tier is "free" for new users
+3. API endpoints check tier status before allowing actions
+4. Free tier users limited to tracking/configuring up to 5 stocks
+5. Premium tier check returns unlimited access
+6. UI displays tier status (free/premium indicator)
+7. Upgrade prompts shown when free tier limit reached (UI only, payment integration deferred)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>dist/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Foundation & User Authentication</title>
+        <section>Story 1.6: Freemium Tier Enforcement</section>
+        <snippet>Story 1.6 implements freemium tier enforcement with 7 acceptance criteria. User tier field (free/premium) in database with default 'free'. API endpoints check tier status. Free tier users limited to 5 stocks, premium unlimited.</snippet>
+      </doc>
+      <doc>
+        <path>dist/epics.md</path>
+        <title>OpenAlpha - Epic Breakdown</title>
+        <section>Story 1.6: Freemium Tier Enforcement</section>
+        <snippet>Story defines system enforcement of free tier limits (5 stocks) and premium user identification. Acceptance criteria cover database tier field, default values, API tier checks, stock limit enforcement, UI tier display, and upgrade prompts.</snippet>
+      </doc>
+      <doc>
+        <path>dist/PRD.md</path>
+        <title>OpenAlpha Product Requirements Document</title>
+        <section>User Account & Authentication (FR001-FR004) - FR003: Freemium Tier Management</section>
+        <snippet>FR003 specifies system enforcement of free tier limits (tracking for limited number of stocks, e.g., 3-5), premium tier identification and feature access control, and clear indication of tier status to users.</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Pattern 3: Tier-Aware Recommendation Pre-Filtering</section>
+        <snippet>Tier-Aware Pattern filters recommendations at generation/retrieval time based on user's tier. Free tier limited to 5 stocks via user_stock_tracking table. Premium users see all recommendations. Filter at API endpoint level.</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>Data Architecture - Database Schema Overview</section>
+        <snippet>user_stock_tracking table tracks which stocks user follows (enforces 5-stock limit for free tier). users.tier column with ENUM('free', 'premium'), default 'free'. Key relationship: users → user_stock_tracking (1:many, max 5 for free tier).</snippet>
+      </doc>
+      <doc>
+        <path>dist/architecture.md</path>
+        <title>Decision Architecture - OpenAlpha</title>
+        <section>API Contracts - User Endpoints</section>
+        <snippet>GET /api/v1/users/me returns user with tier status. Tier enforcement middleware applies to stock tracking endpoints. Tier status helper endpoint optional for detailed tier information.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/1-5-user-profile-preferences-management.md</path>
+        <title>Story 1.5: User Profile & Preferences Management</title>
+        <section>Dev Agent Record - Learnings from Previous Story</section>
+        <snippet>Previous story established patterns: FastAPI Users authentication dependency, React Query server state management, async SQLAlchemy patterns, error handling with HTTPException. Profile page exists at frontend/src/pages/Profile.tsx displaying user tier status.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>backend/app/users/models.py</path>
+        <kind>model</kind>
+        <symbol>User</symbol>
+        <lines>13-19</lines>
+        <reason>User model already has tier field defined with TierEnum, default=TierEnum.FREE. No changes needed for AC1, but verify migration exists.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/models/enums.py</path>
+        <kind>enum</kind>
+        <symbol>TierEnum</symbol>
+        <lines>5-8</lines>
+        <reason>TierEnum defines FREE and PREMIUM values. Used in User model tier column. Reference for tier validation logic.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/users/schemas.py</path>
+        <kind>schema</kind>
+        <symbol>UserRead</symbol>
+        <lines>17-18</lines>
+        <reason>UserRead schema includes tier field from BaseUser (line 14). Endpoint GET /api/v1/users/me returns this schema with tier field.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/users/routes.py</path>
+        <kind>controller</kind>
+        <symbol>router</symbol>
+        <lines>15-58</lines>
+        <reason>User routes already have /me/preferences endpoints. Need to add tier status endpoint here. Follows FastAPI Users dependency pattern with current_user.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/app/crud/users.py</path>
+        <kind>service</kind>
+        <symbol>get_user_preferences</symbol>
+        <lines>13-20</lines>
+        <reason>CRUD functions use async SQLAlchemy patterns. Add get_user_tier function here following same pattern. Reference for tier service implementation.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/pages/Profile.tsx</path>
+        <kind>component</kind>
+        <symbol>Profile</symbol>
+        <lines>92-98</lines>
+        <reason>Profile page already displays tier status from user object. Need to enhance with stock count display and upgrade prompts. Uses React Query pattern.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/types/user.ts</path>
+        <kind>type</kind>
+        <symbol>UserPreferences</symbol>
+        <lines>1-19</lines>
+        <reason>User types file. Need to verify User interface includes tier field (likely in separate type file or auth service). Add tier status types here.</reason>
+      </artifact>
+      <artifact>
+        <path>frontend/src/services/userPreferences.ts</path>
+        <kind>service</kind>
+        <symbol>getPreferences</symbol>
+        <lines>9-23</lines>
+        <reason>Preferences service pattern uses React Query and Axios. Create tier.ts service following same pattern for tier status checks.</reason>
+      </artifact>
+      <artifact>
+        <path>backend/alembic/versions/ed366b9039e4_initial_schema.py</path>
+        <kind>migration</kind>
+        <symbol>upgrade</symbol>
+        <lines>36</lines>
+        <reason>Initial migration includes tier column. Verify user_stock_tracking table exists. May need new migration if table missing.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="Python">
+        <package name="fastapi">^0.109.2</package>
+        <package name="fastapi-users">^10.4.1</package>
+        <package name="sqlalchemy">2.0.x</package>
+        <package name="pydantic">^1.10.6</package>
+        <package name="pytest">^7.2.2</package>
+        <package name="pytest-asyncio">Required for async tests</package>
+      </ecosystem>
+      <ecosystem name="Node.js">
+        <package name="react">^19.1.1</package>
+        <package name="@tanstack/react-query">^5.90.6</package>
+        <package name="axios">^1.13.1</package>
+        <package name="react-router-dom">^6.30.1</package>
+        <package name="typescript">~5.9.3</package>
+        <package name="vitest">^3.2.4</package>
+        <package name="@testing-library/react">^16.3.0</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>
+      <name>Authentication Pattern</name>
+      <description>All tier-related endpoints must use FastAPI Users `Depends(current_user)` for authentication. Follow pattern from preferences endpoints.</description>
+      <source>docs/stories/1-5-user-profile-preferences-management.md#Dev-Agent-Record</source>
+    </constraint>
+    <constraint>
+      <name>React Query Server State</name>
+      <description>Tier status must use React Query for server state management. Use useQuery for fetching, cache tier status to minimize API calls. Follow preferences service pattern.</description>
+      <source>docs/stories/1-5-user-profile-preferences-management.md#Dev-Agent-Record</source>
+    </constraint>
+    <constraint>
+      <name>Async SQLAlchemy Patterns</name>
+      <description>All database operations must use async SQLAlchemy patterns with AsyncSession. Use select() statements, await session.execute(). Follow CRUD functions pattern.</description>
+      <source>backend/app/crud/users.py</source>
+    </constraint>
+    <constraint>
+      <name>Error Handling Format</name>
+      <description>Tier enforcement errors must use FastAPI HTTPException with status 403 Forbidden. Message: "Free tier limit reached. Upgrade for unlimited access." Follow structured error format.</description>
+      <source>docs/stories/1-5-user-profile-preferences-management.md#Dev-Agent-Record</source>
+    </constraint>
+    <constraint>
+      <name>Tier Default Value</name>
+      <description>New users must default to 'free' tier. User model already has default=TierEnum.FREE. Verify migration enforces this default.</description>
+      <source>backend/app/users/models.py:19</source>
+    </constraint>
+    <constraint>
+      <name>Free Tier Limit</name>
+      <description>Free tier users limited to tracking 5 stocks maximum. Premium tier unlimited. Limit enforced at API endpoint level before processing requests.</description>
+      <source>dist/architecture.md#pattern-3-tier-aware-recommendation-pre-filtering</source>
+    </constraint>
+    <constraint>
+      <name>Database Schema</name>
+      <description>user_stock_tracking table required with: id (UUID), user_id (FK), stock_id (FK), created_at. Unique constraint on (user_id, stock_id). Index on user_id for tier limit queries.</description>
+      <source>dist/architecture.md#data-architecture</source>
+    </constraint>
+    <constraint>
+      <name>Testing Framework</name>
+      <description>Backend: pytest with pytest-asyncio. Frontend: Vitest with React Testing Library. Integration tests use FastAPI AsyncClient. Component tests mock API services.</description>
+      <source>dist/tech-spec-epic-1.md#test-strategy-summary</source>
+    </constraint>
+    <constraint>
+      <name>File Organization</name>
+      <description>Backend: tier_service.py in services/, tier dependency in core/tier.py, CRUD in crud/users.py. Frontend: tier.ts service, useTier.ts hook, UpgradePrompt.tsx component.</description>
+      <source>dist/architecture.md#project-structure</source>
+    </constraint>
+    <constraint>
+      <name>Payment Integration Deferred</name>
+      <description>Upgrade prompts display UI only. No payment processing in this story. Button can navigate to placeholder upgrade page.</description>
+      <source>docs/stories/1-6-freemium-tier-enforcement.md#acceptance-criteria</source>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /api/v1/users/me</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/users/me - Returns UserRead schema with tier field. Headers: Authorization required. Response 200: {id, email, tier: "free" | "premium", ...}</signature>
+      <path>backend/app/users/routes.py:58</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/users/me/tier-status</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/users/me/tier-status - Returns tier status with stock count and limits. Response 200: {tier, stock_count, stock_limit, can_add_more}. Free tier: {tier: "free", stock_count: 3, stock_limit: 5, can_add_more: true}. Premium: {tier: "premium", stock_count: null, stock_limit: null, can_add_more: true}</signature>
+      <path>backend/app/users/routes.py - To be created</path>
+    </interface>
+    <interface>
+      <name>check_tier_limit</name>
+      <kind>function</kind>
+      <signature>async def check_tier_limit(user_id: UUID, session: AsyncSession) -&gt; dict: Returns {allowed: bool, reason?: str, limit?: int, remaining?: int}. Raises HTTPException 403 if limit reached.</signature>
+      <path>backend/app/services/tier_service.py - To be created</path>
+    </interface>
+    <interface>
+      <name>checkTierLimit</name>
+      <kind>function</kind>
+      <signature>async function checkTierLimit(): Promise&lt;TierStatus&gt; - Calls GET /api/v1/users/me/tier-status. Returns tier status object.</signature>
+      <path>frontend/src/services/tier.ts - To be created</path>
+    </interface>
+    <interface>
+      <name>useTier</name>
+      <kind>hook</kind>
+      <signature>function useTier(): {tier, stockCount, stockLimit, canAddMore, isPremium, isLoading, error} - React Query hook for tier status management.</signature>
+      <path>frontend/src/hooks/useTier.ts - To be created</path>
+    </interface>
+    <interface>
+      <name>User.tier</name>
+      <kind>property</kind>
+      <signature>tier: TierEnum - User model property. Values: TierEnum.FREE, TierEnum.PREMIUM. Default: TierEnum.FREE.</signature>
+      <path>backend/app/users/models.py:19</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Backend testing uses pytest with pytest-asyncio for async test support. Unit tests cover tier service logic (check_tier_limit function) with various scenarios: free tier with 0/4/5 stocks, premium tier. Integration tests use FastAPI AsyncClient to test tier endpoints with authenticated users. Frontend testing uses Vitest with React Testing Library. Component tests mock API services and React Query hooks. All tests must verify tier enforcement logic, error handling (403 for limit reached), and UI display of tier status. Performance tests verify tier check queries complete &lt;200ms.
+    </standards>
+    <locations>
+backend/tests/test_crud/ - Unit tests for CRUD functions (tier service)
+backend/tests/test_api/ - Integration tests for tier endpoints
+frontend/src/pages/Profile.test.tsx - Component tests for tier display
+frontend/src/components/common/UpgradePrompt.test.tsx - Component tests for upgrade prompt (to be created)
+    </locations>
+    <ideas>
+AC1: Test User model tier field defaults to FREE. Test database migration enforces default.
+AC2: Test new user creation defaults to 'free' tier. Test tier enum values.
+AC3: Test tier check dependency applied to endpoints. Test 403 response when limit reached. Test premium bypass.
+AC4: Test free tier limit enforcement: 0 stocks (allowed), 4 stocks (allowed), 5 stocks (blocked), 6th attempt (403).
+AC5: Test premium tier returns unlimited access. Test premium user bypasses all limit checks.
+AC6: Test Profile page displays tier badge. Test tier status indicator styling. Test tier status in navigation.
+AC7: Test upgrade prompt displays when canAddMore=false. Test upgrade button navigation. Test prompt styling.
+    </ideas>
+  </tests>
+</story-context>
+
