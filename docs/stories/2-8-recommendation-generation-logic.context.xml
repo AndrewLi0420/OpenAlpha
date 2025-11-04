@@ -1,0 +1,74 @@
+<storyContext>
+  <meta>
+    <storyKey>2-8-recommendation-generation-logic</storyKey>
+    <storyId>2.8</storyId>
+    <storyTitle>Recommendation Generation Logic</storyTitle>
+    <status>drafted</status>
+    <generatedAt>2025-11-04</generatedAt>
+  </meta>
+  <story>
+    <asA>system</asA>
+    <iWant>generate approximately 10 recommendations per day by combining ML predictions, sentiment, and risk scores</iWant>
+    <soThat>users receive actionable trading insights</soThat>
+  </story>
+  <acceptanceCriteria>
+    <item>Algorithm selects top stocks by ML signals, confidence, sentiment</item>
+    <item>Generates ~10 recommendations daily (configurable)</item>
+    <item>Each recommendation includes stock, signal, confidence, sentiment, risk</item>
+    <item>Filter by user holding period when user-specific</item>
+    <item>Persist recommendations with timestamp</item>
+    <item>Runs on schedule (hourly or 5-minute if cost-effective)</item>
+    <item>Meets latency requirements</item>
+  </acceptanceCriteria>
+  <tasks>
+    <item>Implement generation orchestrator using ml_service and sentiment aggregation</item>
+    <item>Integrate risk via recommendation_service.calculate_risk_level</item>
+    <item>Configure scheduler and target count</item>
+    <item>Preference-aware filtering and tier-aware API filtering</item>
+    <item>Unit, integration, and performance tests</item>
+  </tasks>
+  <artifacts>
+    <docs>
+      <doc path="dist/epics.md" section="Story 2.8" />
+      <doc path="dist/architecture.md" section="Novel Pattern Designs" />
+      <doc path="docs/stories/2-7-risk-assessment-calculation.md" section="Dev Notes" />
+      <doc path="dist/PRD.md" section="FR014 Recommendation Generation" />
+    </docs>
+    <code>
+      <entry path="backend/app/services/ml_service.py" kind="service" symbol="predict_stock" reason="Model inference and confidence" />
+      <entry path="backend/app/services/recommendation_service.py" kind="service" symbol="calculate_risk_level" reason="Risk computation" />
+      <entry path="backend/app/tasks/recommendations.py" kind="task" symbol="scheduled_generation" reason="Scheduler hook (to implement)" />
+      <entry path="backend/app/crud/market_data.py" kind="crud" symbol="get_market_data_history" reason="Volatility input" />
+      <entry path="backend/app/models/recommendation.py" kind="model" symbol="Recommendation" reason="Persistence schema with risk_level" />
+      <entry path="backend/tests/test_services/test_ml_service.py" kind="test" reason="Inference test patterns" />
+      <entry path="backend/tests/test_services/test_recommendation_service.py" kind="test" reason="Risk calc tests to reuse" />
+    </code>
+    <interfaces>
+      <iface name="GET /api/v1/recommendations" kind="REST" signature="List current recommendations" path="dist/architecture.md#API Contracts" />
+    </interfaces>
+    <dependencies>
+      <python>
+        <pkg name="fastapi" />
+        <pkg name="sqlalchemy" />
+        <pkg name="alembic" />
+        <pkg name="numpy" />
+        <pkg name="apscheduler" />
+      </python>
+    </dependencies>
+  </artifacts>
+  <constraints>
+    <item>Reuse existing services; do not duplicate risk logic</item>
+    <item>Structured logging JSON per architecture</item>
+    <item>Finish within 1 minute per batch</item>
+  </constraints>
+  <tests>
+    <standards>Use pytest/pytest-asyncio for backend, follow existing service test patterns.</standards>
+    <locations>backend/tests/test_services/, backend/tests/test_api/</locations>
+    <ideas>
+      <idea ac="1">Ranking correctness with mixed signals</idea>
+      <idea ac="3">Persisted rows include all fields</idea>
+      <idea ac="6">Scheduler triggers function and completes under target</idea>
+    </ideas>
+  </tests>
+</storyContext>
+

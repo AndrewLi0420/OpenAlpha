@@ -1,0 +1,174 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>7</storyId>
+    <title>Risk Assessment Calculation</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-7-risk-assessment-calculation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system</asA>
+    <iWant>to calculate risk indicators (low/medium/high) for each recommendation</iWant>
+    <soThat>users can understand risk associated with recommendations</soThat>
+    <tasks>
+      - Create risk assessment service (AC: 1, 2)
+      - Implement volatility calculation (AC: 5)
+      - Integrate risk calculation into recommendation generation (AC: 3)
+      - Store risk indicators in database (AC: 4)
+      - Testing: Unit tests for risk assessment service (AC: 1, 2, 5)
+      - Testing: Integration tests for risk assessment (AC: 3, 4)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">Risk calculation algorithm defined (based on volatility, ML model uncertainty, market conditions)</ac>
+    <ac id="2">Risk level assigned: Low, Medium, High</ac>
+    <ac id="3">Risk calculation integrated into recommendation generation</ac>
+    <ac id="4">Risk indicators stored with recommendations</ac>
+    <ac id="5">Risk calculation uses recent market volatility data</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.7: Risk Assessment Calculation">
+        Risk calculation algorithm based on volatility, ML model uncertainty, and market conditions. Risk level assigned: Low, Medium, High. Risk calculation integrated into recommendation generation workflow. Risk indicators stored with recommendations. Risk calculation uses recent market volatility data.
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Services and Modules">
+        Risk Assessment Service: Calculates risk indicators (low/medium/high) for recommendations. Location: backend/app/services/recommendation_service.py (risk calculation functions). Inputs: Market volatility, ML model uncertainty (confidence score), market conditions. Outputs: Risk level (Low/Medium/High).
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Recommendation Generation Workflow">
+        Risk calculation integrated into recommendation generation: For each stock, get ML prediction (signal, confidence), get latest aggregated sentiment score, calculate risk level (low/medium/high) based on volatility, ML uncertainty, store risk level with recommendation.
+      </doc>
+      <doc path="dist/epics.md" title="Epic Breakdown" section="Story 2.7: Risk Assessment Calculation">
+        As a system, I want to calculate risk indicators (low/medium/high) for each recommendation, so that users can understand risk associated with recommendations. Acceptance criteria: Risk calculation algorithm defined, risk level assigned, risk calculation integrated, risk indicators stored, risk calculation uses recent market volatility data.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR013: Risk Assessment">
+        System calculates risk indicators (low/medium/high) for each recommendation. Risk scores derived from ML model outputs and market conditions. Risk indicators displayed alongside recommendations.
+      </doc>
+      <doc path="dist/architecture.md" title="Architecture Document" section="Data Architecture">
+        Recommendations table includes risk_level column (ENUM('low', 'medium', 'high')). Market data table has price, volume, timestamp columns with timestamp indexed for time-series queries - ideal for volatility calculation.
+      </doc>
+      <doc path="dist/architecture.md" title="Architecture Document" section="Implementation Patterns">
+        Python files: snake_case.py, Python functions: snake_case, Python classes: PascalCase. Risk levels: "low", "medium", "high" (lowercase strings, stored as ENUM in database).
+      </doc>
+      <doc path="docs/stories/2-6-ml-model-inference-service.md" title="Previous Story: ML Model Inference Service" section="Dev Agent Record">
+        ML Service Available: backend/app/services/ml_service.py contains inference functions (predict_stock()) that return prediction signals and confidence scores. Model Confidence Scores: Confidence scores are calculated from R² analysis and are in [0, 1] range. Lower confidence indicates higher ML uncertainty, which should contribute to higher risk.
+      </doc>
+    </docs>
+    <code>
+      <code path="backend/app/models/recommendation.py" kind="model" symbol="Recommendation" lines="1-59" reason="Recommendation model already includes risk_level column (ENUM) - no migration needed. Model has risk_level field with RiskLevelEnum type.">
+      </code>
+      <code path="backend/app/models/enums.py" kind="enum" symbol="RiskLevelEnum" lines="32-37" reason="RiskLevelEnum already defined with LOW, MEDIUM, HIGH values. Use this enum for risk level assignment in risk calculation function.">
+      </code>
+      <code path="backend/app/models/enums.py" kind="enum" symbol="SignalEnum" lines="25-29" reason="SignalEnum defines buy/sell/hold signals. Risk calculation will be integrated with recommendation generation that uses these signals.">
+      </code>
+      <code path="backend/app/schemas/recommendation.py" kind="schema" symbol="RecommendationBase" lines="11-18" reason="Pydantic schema for recommendations includes risk_level field with RiskLevelEnum type. Schema already supports risk_level - no schema changes needed.">
+      </code>
+      <code path="backend/app/services/ml_service.py" kind="service" symbol="predict_stock" lines="970-1170" reason="ML inference service returns confidence scores in [0, 1] range. Use these confidence scores for ML uncertainty component in risk calculation. Function signature: async def predict_stock(session, stock_id, market_data=None, sentiment_score=None) -> dict with 'confidence_score' field.">
+      </code>
+      <code path="backend/app/crud/market_data.py" kind="crud" symbol="get_market_data_history" lines="68-97" reason="Function to query historical market data for volatility calculation. Signature: async def get_market_data_history(session, stock_id, start_date, end_date) -> list[MarketData]. Returns MarketData records ordered by timestamp (ascending) for time-series analysis.">
+      </code>
+      <code path="backend/app/crud/market_data.py" kind="crud" symbol="get_latest_market_data" lines="45-65" reason="Function to get most recent market data for a stock. Can be used to get current price for volatility calculation. Signature: async def get_latest_market_data(session, stock_id) -> MarketData | None.">
+      </code>
+      <code path="backend/app/services/ml_service.py" kind="service" symbol="prepare_feature_vectors" lines="101-274" reason="Feature engineering function that processes market data and sentiment data. While not directly used for risk calculation, demonstrates pattern for processing time-series market data. Risk calculation should use similar approach for processing historical price data.">
+      </code>
+      <code path="backend/tests/test_services/test_ml_service.py" kind="test" symbol="test_predict_stock" lines="275-400" reason="Unit test patterns for ML service. Follow similar patterns for risk assessment service tests: use pytest with async support, mock database queries, test edge cases (missing data, extreme values).">
+      </code>
+      <code path="backend/alembic/versions/ed366b9039e4_initial_schema.py" kind="migration" symbol="upgrade" lines="59-75" reason="Initial schema migration shows recommendations table already includes risk_level column (ENUM). No migration needed for this story - column already exists.">
+      </code>
+    </code>
+    <dependencies>
+      <python>
+        <package name="fastapi" version=">=0.109.2" reason="FastAPI framework for service integration"/>
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" reason="ORM for database queries (market data, recommendations)"/>
+        <package name="numpy" version=">=1.24.0" reason="Statistical calculations (standard deviation for volatility)"/>
+        <package name="pytest" version=">=7.2.2" reason="Testing framework"/>
+        <package name="pytest-asyncio" version=">=0.21.0" reason="Async test support"/>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">
+      Risk assessment service should be located at backend/app/services/recommendation_service.py (extend with risk calculation functions). Follow existing service organization patterns from ml_service.py.
+    </constraint>
+    <constraint type="database">
+      Recommendations table already has risk_level column (ENUM) - no migration needed. Use existing RiskLevelEnum for type safety. Database schema is already correct.
+    </constraint>
+    <constraint type="performance">
+      Risk calculation must complete within recommendation generation latency (<1 minute per stock). Use efficient database queries with indexed timestamp columns. Use NumPy for statistical calculations (standard deviation).
+    </constraint>
+    <constraint type="naming">
+      Python files: snake_case.py (recommendation_service.py). Python functions: snake_case (calculate_risk_level, calculate_volatility). Python classes: PascalCase (RiskAssessmentService, RecommendationService). Risk levels: "low", "medium", "high" (lowercase strings).
+    </constraint>
+    <constraint type="testing">
+      Follow testing patterns from test_ml_service.py: use pytest with async support (pytest-asyncio), mock database queries for unit tests, use FastAPI TestClient (AsyncClient) for integration tests. Test edge cases: missing market data, zero volatility, extreme confidence scores, insufficient historical data.
+    </constraint>
+    <constraint type="logging">
+      Use structured logging with JSON format for Render dashboard. Log risk levels calculated for each recommendation. Follow logging patterns from ml_service.py.
+    </constraint>
+    <constraint type="error-handling">
+      If risk calculation fails, use default risk level (medium) or skip risk assessment gracefully. Handle missing market data, insufficient historical data, calculation failures without crashing recommendation generation.
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="calculate_risk_level" kind="function" signature="async def calculate_risk_level(session: AsyncSession, stock_id: UUID, ml_confidence: float, market_data: dict | None = None, market_conditions: dict | None = None) -> RiskLevelEnum" path="backend/app/services/recommendation_service.py">
+      Main risk calculation function. Inputs: stock_id, ML confidence score, optional market_data dict, optional market_conditions dict. Output: RiskLevelEnum (LOW, MEDIUM, HIGH). Calculates volatility from market data history, assesses ML uncertainty from confidence score, evaluates market conditions, combines components with weighted algorithm, maps to risk level.
+    </interface>
+    <interface name="calculate_volatility" kind="function" signature="async def calculate_volatility(session: AsyncSession, stock_id: UUID, days: int = 30) -> float" path="backend/app/services/recommendation_service.py">
+      Volatility calculation helper function. Inputs: stock_id, number of days for history (default 30). Output: normalized volatility score [0, 1]. Queries market_data table for historical prices, calculates price changes, computes standard deviation, normalizes to [0, 1] range.
+    </interface>
+    <interface name="get_market_data_history" kind="function" signature="async def get_market_data_history(session: AsyncSession, stock_id: UUID, start_date: datetime, end_date: datetime) -> list[MarketData]" path="backend/app/crud/market_data.py">
+      Existing CRUD function to query historical market data. Use this function to get price history for volatility calculation. Returns list of MarketData records ordered by timestamp (ascending).
+    </interface>
+    <interface name="predict_stock" kind="function" signature="async def predict_stock(session: AsyncSession, stock_id: UUID, market_data: dict | None = None, sentiment_score: float | None = None) -> dict" path="backend/app/services/ml_service.py">
+      ML inference function that returns confidence scores. Use 'confidence_score' field from return dict for ML uncertainty component in risk calculation. Confidence scores are in [0, 1] range.
+    </interface>
+    <interface name="Recommendation" kind="model" signature="class Recommendation(Base): risk_level: Column[RiskLevelEnum]" path="backend/app/models/recommendation.py">
+      SQLAlchemy model for recommendations. Already includes risk_level column with RiskLevelEnum type. Use this model when storing recommendations with risk levels.
+    </interface>
+    <interface name="RecommendationBase" kind="schema" signature="class RecommendationBase(BaseModel): risk_level: RiskLevelEnum" path="backend/app/schemas/recommendation.py">
+      Pydantic schema for recommendations. Already includes risk_level field. Use this schema when creating/updating recommendations via API.
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Testing follows pytest framework with async support (pytest-asyncio). Unit tests mock database queries for isolation. Integration tests use FastAPI TestClient (AsyncClient) with real database. Test patterns established in backend/tests/test_services/test_ml_service.py. Edge cases: missing data, zero values, extreme values, insufficient history. Test coverage targets: 80%+ for critical paths.
+    </standards>
+    <locations>
+      backend/tests/test_services/test_recommendation_service.py (create new test file or extend existing if present)
+    </locations>
+    <ideas>
+      <test ac="1" priority="P0" level="unit">
+        Test risk calculation algorithm with various combinations: high volatility + low confidence → high risk, low volatility + high confidence → low risk, medium volatility + medium confidence → medium risk.
+      </test>
+      <test ac="2" priority="P0" level="unit">
+        Test risk level assignment: risk score 0.0-0.33 → LOW, 0.34-0.66 → MEDIUM, 0.67-1.0 → HIGH. Test boundary conditions (0.33, 0.34, 0.66, 0.67).
+      </test>
+      <test ac="3" priority="P0" level="integration">
+        Test risk calculation integrated into recommendation generation workflow: verify risk calculation called, verify risk level included in recommendation object, verify recommendation stored with risk_level.
+      </test>
+      <test ac="4" priority="P0" level="integration">
+        Test risk indicators stored in database: create recommendation with risk_level, verify risk_level persisted correctly in recommendations table, verify RiskLevelEnum values match database ENUM values.
+      </test>
+      <test ac="5" priority="P0" level="unit">
+        Test volatility calculation: query market data history (7-30 days), calculate price changes, compute standard deviation, verify normalization to [0, 1] range, test with insufficient data (<7 days).
+      </test>
+      <test priority="P1" level="unit">
+        Test edge cases: missing market data (use default or skip), zero volatility (all prices constant → low risk), extreme confidence scores (0.0 → high uncertainty, 1.0 → low uncertainty), market conditions unavailable (skip component or use default).
+      </test>
+      <test priority="P1" level="integration">
+        Test error handling: risk calculation failure uses default risk level (medium), database connection failures handled gracefully, recommendation generation continues even if risk calculation fails.
+      </test>
+      <test priority="P2" level="performance">
+        Test risk calculation latency: verify calculation completes within <1 minute per stock, verify database queries use indexes efficiently, verify NumPy calculations are optimized.
+      </test>
+    </ideas>
+  </tests>
+</story-context>
+

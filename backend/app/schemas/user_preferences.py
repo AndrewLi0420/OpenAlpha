@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.models.enums import HoldingPeriodEnum, RiskToleranceEnum
 
@@ -31,5 +31,4 @@ class UserPreferencesRead(UserPreferencesBase):
     user_id: UUID
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

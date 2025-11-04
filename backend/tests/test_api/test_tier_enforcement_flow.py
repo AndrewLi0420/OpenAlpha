@@ -68,11 +68,12 @@ async def authenticated_user(db_session, client):
     )
     user = result.scalar_one()
     
+    # Persist session cookies on the client to avoid per-request cookies deprecation
+    client.cookies.update(login_response.cookies)
     return {
         "email": register_data["email"],
         "password": register_data["password"],
         "user": user,
-        "cookies": login_response.cookies,
     }
 
 
@@ -109,12 +110,11 @@ async def test_complete_flow_free_tier_user_tracks_stocks_up_to_limit(
 ):
     """[E2E Simulation] Test complete flow: Free tier user tracks stocks up to limit"""
     user = authenticated_user["user"]
-    cookies = authenticated_user["cookies"]
+    
     
     # Step 1: User starts with 0 stocks - tier status shows can_add_more=True
     response = await client.get(
         "/api/v1/users/me/tier-status",
-        cookies=cookies
     )
     assert response.status_code == 200
     data = response.json()
@@ -135,7 +135,6 @@ async def test_complete_flow_free_tier_user_tracks_stocks_up_to_limit(
     # Step 3: Tier status updates correctly
     response = await client.get(
         "/api/v1/users/me/tier-status",
-        cookies=cookies
     )
     assert response.status_code == 200
     data = response.json()
@@ -156,7 +155,6 @@ async def test_complete_flow_free_tier_user_tracks_stocks_up_to_limit(
     # Step 5: Tier status shows limit reached
     response = await client.get(
         "/api/v1/users/me/tier-status",
-        cookies=cookies
     )
     assert response.status_code == 200
     data = response.json()
@@ -179,12 +177,11 @@ async def test_premium_user_can_track_unlimited_stocks(
 ):
     """[E2E Simulation] Test premium user: Can track unlimited stocks without prompts"""
     user = premium_user["user"]
-    cookies = premium_user["cookies"]
+    
     
     # Step 1: Premium user starts with 0 stocks
     response = await client.get(
         "/api/v1/users/me/tier-status",
-        cookies=cookies
     )
     assert response.status_code == 200
     data = response.json()
@@ -205,7 +202,6 @@ async def test_premium_user_can_track_unlimited_stocks(
     # Step 3: Tier status shows unlimited access
     response = await client.get(
         "/api/v1/users/me/tier-status",
-        cookies=cookies
     )
     assert response.status_code == 200
     data = response.json()
@@ -228,12 +224,11 @@ async def test_tier_status_display_updates_correctly_on_profile(
 ):
     """[E2E Simulation] Test tier status display: Profile shows correct tier indicator"""
     user = authenticated_user["user"]
-    cookies = authenticated_user["cookies"]
+    
     
     # Step 1: Check GET /api/v1/users/me includes tier
     response = await client.get(
         "/api/v1/users/me",
-        cookies=cookies
     )
     assert response.status_code == 200
     data = response.json()
@@ -243,7 +238,6 @@ async def test_tier_status_display_updates_correctly_on_profile(
     # Step 2: Check tier-status endpoint returns correct format for Profile display
     response = await client.get(
         "/api/v1/users/me/tier-status",
-        cookies=cookies
     )
     assert response.status_code == 200
     data = response.json()
@@ -266,7 +260,6 @@ async def test_tier_status_display_updates_correctly_on_profile(
     
     response = await client.get(
         "/api/v1/users/me/tier-status",
-        cookies=cookies
     )
     data = response.json()
     assert data["stock_count"] == 3

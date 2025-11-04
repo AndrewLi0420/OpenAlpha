@@ -1,0 +1,135 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>6</storyId>
+    <title>ML Model Inference Service</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31T00:00:00Z</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-6-ml-model-inference-service.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system</asA>
+    <iWant>ML models to generate predictions (buy/sell/hold) with confidence scores for stocks</iWant>
+    <soThat>recommendations can be created with statistical backing</soThat>
+    <tasks>
+      - Create ML inference service endpoint (AC: 1)
+      - Implement input data preparation (AC: 2)
+      - Implement model inference (AC: 3)
+      - Implement confidence score calculation (AC: 4)
+      - Optimize inference latency (AC: 5)
+      - Integrate both models (AC: 6)
+      - Add model performance logging (AC: 7)
+      - Testing: Unit tests for ML inference service (AC: 1, 2, 3, 4, 5, 6, 7)
+      - Testing: Integration tests for ML inference service (AC: 1, 2, 3, 4, 5, 6, 7)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">Model inference service/endpoint in FastAPI</ac>
+    <ac id="2">Input: current market data + sentiment scores for a stock</ac>
+    <ac id="3">Models generate: prediction signal (buy/sell/hold) + confidence score</ac>
+    <ac id="4">Confidence score calculated from R² analysis of model performance</ac>
+    <ac id="5">Inference completes within &lt;1 minute latency requirement</ac>
+    <ac id="6">Both neural network and Random Forest models used (ensemble or separate)</ac>
+    <ac id="7">Model performance metrics logged (R², accuracy)</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.6: ML Model Inference Service">
+        ML Model Inference Service generates predictions (buy/sell/hold) with confidence scores using trained models. Input: current market data, sentiment scores. Output: prediction signal, confidence score (based on R²). Location: backend/app/services/ml_service.py (inference functions).
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="ML Inference Workflow">
+        Workflow: Load current market data and sentiment score, prepare feature vector, run neural network and Random Forest inference, combine model outputs (ensemble or majority vote), calculate confidence score from R² analysis.
+      </doc>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Non-Functional Requirements">
+        ML model inference target: &lt;1 minute per stock prediction. Model caching: Load models once at startup, reuse for inference. Async processing: Use FastAPI async for non-blocking inference.
+      </doc>
+      <doc path="dist/epics.md" title="Epic Breakdown" section="Story 2.6: ML Model Inference Service">
+        As a system, I want ML models to generate predictions (buy/sell/hold) with confidence scores for stocks, so that recommendations can be created with statistical backing. Acceptance criteria include model inference service/endpoint, input handling, prediction generation, confidence scoring, latency optimization, model integration, and performance logging.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR011: ML Model Inference">
+        System runs neural network and Random Forest models for stock predictions. Models generate buy/sell/hold signals for Fortune 500 stocks. Model inference completes within &lt;1 minute latency requirement.
+      </doc>
+      <doc path="dist/PRD.md" title="Product Requirements Document" section="FR012: Confidence Score Generation">
+        System calculates confidence scores based on R² analysis for each prediction. Confidence scores displayed with each recommendation. Model performance metrics tracked and stored.
+      </doc>
+      <doc path="dist/architecture.md" title="Architecture Document" section="Performance Considerations">
+        ML Inference target: &lt;1 minute per stock prediction. Optimization: Batch inference where possible. Model caching: Load models once at startup, reuse for inference. Async processing: Use FastAPI async for non-blocking inference.
+      </doc>
+      <doc path="dist/architecture.md" title="Architecture Document" section="Project Structure">
+        ML service: backend/app/services/ml_service.py (extend existing service with inference functions). Model artifacts: ml-models/ directory. FastAPI endpoint: backend/app/api/v1/endpoints/ml.py (create new endpoint file) or add to existing service.
+      </doc>
+      <doc path="docs/stories/2-5-ml-model-training-infrastructure.md" title="Story 2.5: ML Model Training Infrastructure" section="Dev Agent Record">
+        ML Service created at backend/app/services/ml_service.py with training pipeline. Model loading function available: load_model(model_type, version=None) at lines 470-528. Feature engineering function available: prepare_feature_vectors() at lines 101-274. Model artifacts in ml-models/ directory.
+      </doc>
+    </docs>
+    <code>
+      <code path="backend/app/services/ml_service.py" kind="service" symbol="load_model" lines="470-528" reason="Function to load trained models for inference. Supports loading neural network (.pth) and Random Forest (.pkl) models with metadata." />
+      <code path="backend/app/services/ml_service.py" kind="service" symbol="get_latest_model_version" lines="531-571" reason="Function to retrieve latest model version for a given model type. Used to load latest models for inference." />
+      <code path="backend/app/services/ml_service.py" kind="service" symbol="prepare_feature_vectors" lines="101-274" reason="Feature engineering function that combines market data and sentiment into feature vectors. Must use same function for inference to ensure feature vectors match training data. Features: price, price_change, rolling_price_avg, rolling_price_std, volume, volume_change, rolling_volume_avg, sentiment_score, sentiment_trend (9 features total)." />
+      <code path="backend/app/services/ml_service.py" kind="service" symbol="NeuralNetworkModel" lines="277-305" reason="Neural network model class for PyTorch inference. Architecture: 2 hidden layers (128, 64 neurons), ReLU activation, dropout, Softmax output, 3-class classification (buy/sell/hold)." />
+      <code path="backend/app/services/ml_service.py" kind="service" symbol="train_random_forest" lines="308-343" reason="Random Forest model training function. Model can be loaded and used for inference. Uses scikit-learn RandomForestClassifier." />
+      <code path="backend/app/crud/market_data.py" kind="crud" symbol="get_latest_market_data" lines="45-65" reason="CRUD function to get most recent market data for a stock. Returns MarketData instance with price, volume, timestamp. Used for inference input preparation." />
+      <code path="backend/app/crud/sentiment_data.py" kind="crud" symbol="get_latest_sentiment_data" lines="90-107" reason="CRUD function to get most recent sentiment data for a stock. Returns SentimentData instance with sentiment_score, timestamp. Used for inference input preparation." />
+      <code path="backend/app/crud/sentiment_data.py" kind="crud" symbol="get_aggregated_sentiment" lines="135-149" reason="Function to compute unified sentiment score across all sources (simple average). Returns aggregated sentiment score for inference." />
+      <code path="backend/tests/test_services/test_ml_service.py" kind="test" symbol="test_prepare_feature_vectors_basic" lines="23-73" reason="Unit test for feature vector preparation. Can be extended for inference testing patterns." />
+      <code path="backend/tests/test_services/test_ml_service.py" kind="test" symbol="test_save_and_load_neural_network" lines="182-240" reason="Unit tests for model saving/loading. Can be adapted for testing inference model loading." />
+    </code>
+    <dependencies>
+      <python>
+        <package name="torch" version=">=2.0.0" />
+        <package name="scikit-learn" version=">=1.3.0" />
+        <package name="pandas" version=">=2.0.0" />
+        <package name="numpy" version=">=1.24.0" />
+        <package name="fastapi" version=">=0.109.2" />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" />
+        <package name="pytest" version=">=7.2.2" />
+        <package name="pytest-asyncio" version=">=0.21.0" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Extend existing ml_service.py rather than creating new service. Reuse load_model(), prepare_feature_vectors(), and get_latest_model_version() functions from Story 2.5.</constraint>
+    <constraint>Use same feature engineering as training pipeline (prepare_feature_vectors()) to ensure feature vectors match training data. Features: 9 features total (price, price_change, rolling_price_avg, rolling_price_std, volume, volume_change, rolling_volume_avg, sentiment_score, sentiment_trend).</constraint>
+    <constraint>Feature normalization must match training: min-max scaling to [0, 1] range as implemented in prepare_feature_vectors().</constraint>
+    <constraint>Model loading: Load models once at service startup (FastAPI lifespan events), cache in memory, reuse for inference. Do not load models per request.</constraint>
+    <constraint>Inference latency requirement: &lt;1 minute per stock prediction (per PRD FR011).</constraint>
+    <constraint>Use async/await patterns throughout (SQLAlchemy async, FastAPI async endpoints).</constraint>
+    <constraint>Structured logging: JSON format for log aggregation (Render dashboard). Log inference requests, predictions, confidence scores, latency, errors.</constraint>
+    <constraint>Error handling: Handle missing models, invalid inputs, model inference failures gracefully. Return appropriate error responses.</constraint>
+    <constraint>Testing: Use pytest with async support (pytest-asyncio). Mock model files for unit tests (don't require actual trained models).</constraint>
+    <constraint>Code organization: Follow project structure patterns - backend/app/services/ml_service.py for service logic, backend/app/api/v1/endpoints/ml.py for FastAPI endpoint (or extend existing service).</constraint>
+    <constraint>Naming conventions: Python files snake_case.py, functions snake_case, classes PascalCase, API endpoints /api/v1/ml/predict (RESTful).</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="load_model" kind="function signature" signature="load_model(model_type: str, version: str | None = None, base_path: str | Path | None = None) -> tuple[Any, dict[str, Any]]" path="backend/app/services/ml_service.py" />
+    <interface name="get_latest_model_version" kind="function signature" signature="get_latest_model_version(model_type: str, base_path: str | Path | None = None) -> str | None" path="backend/app/services/ml_service.py" />
+    <interface name="prepare_feature_vectors" kind="function signature" signature="prepare_feature_vectors(market_data: list[dict[str, Any]], sentiment_data: list[dict[str, Any]]) -> tuple[np.ndarray, np.ndarray | None]" path="backend/app/services/ml_service.py" />
+    <interface name="get_latest_market_data" kind="function signature" signature="get_latest_market_data(session: AsyncSession, stock_id: UUID) -> MarketData | None" path="backend/app/crud/market_data.py" />
+    <interface name="get_latest_sentiment_data" kind="function signature" signature="get_latest_sentiment_data(session: AsyncSession, stock_id: UUID, source: str | None = None) -> SentimentData | None" path="backend/app/crud/sentiment_data.py" />
+    <interface name="get_aggregated_sentiment" kind="function signature" signature="get_aggregated_sentiment(session: AsyncSession, stock_id: UUID) -> float | None" path="backend/app/crud/sentiment_data.py" />
+    <interface name="POST /api/v1/ml/predict" kind="REST endpoint" signature="POST /api/v1/ml/predict - Request: { stock_id: UUID, market_data?: { price: float, volume: int }, sentiment_score?: float } - Response: { signal: 'buy'|'sell'|'hold', confidence_score: float, model_used: 'neural_network'|'random_forest'|'ensemble' }" path="backend/app/api/v1/endpoints/ml.py (to be created)" />
+  </interfaces>
+
+  <tests>
+    <standards>Use pytest with async support (pytest-asyncio) for testing. Follow patterns established in backend/tests/test_services/test_ml_service.py. Unit tests should mock model files (don't require actual trained models). Integration tests should use real database and models. Use FastAPI TestClient (AsyncClient) for API endpoint tests. Test coverage should include: model loading, feature vector preparation, neural network inference, Random Forest inference, ensemble prediction, confidence score calculation, latency validation, error handling.</standards>
+    <locations>backend/tests/test_services/test_ml_service.py (extend existing test file), backend/tests/test_api/ (for FastAPI endpoint tests)</locations>
+    <ideas>
+      <idea ac="1">Test FastAPI endpoint POST /api/v1/ml/predict with TestClient. Verify endpoint accepts stock_id, market_data, sentiment_score. Verify response format: signal, confidence_score, model_used.</idea>
+      <idea ac="2">Test input data preparation: Test get_latest_market_data() and get_latest_sentiment_data() with mock database session. Test prepare_feature_vectors() with inference inputs. Verify feature normalization matches training.</idea>
+      <idea ac="3">Test model inference: Test neural network inference with sample feature vector. Test Random Forest inference with sample feature vector. Test ensemble prediction combining both models.</idea>
+      <idea ac="4">Test confidence score calculation: Verify confidence scores are in [0, 1] range. Test confidence score calculation from R² and prediction probability. Test ensemble confidence score combination.</idea>
+      <idea ac="5">Test inference latency: Verify inference completes within &lt;1 minute. Measure inference time for each request. Test model caching at startup.</idea>
+      <idea ac="6">Test model integration: Test loading both neural network and Random Forest models at startup. Test ensemble strategy (majority vote, weighted average). Test graceful degradation if one model fails.</idea>
+      <idea ac="7">Test performance logging: Verify structured logging of inference requests, predictions, confidence scores, latency, errors. Test log format for Render dashboard aggregation.</idea>
+      <idea edge="error">Test error handling: Missing models (FileNotFoundError), invalid inputs (ValueError), model inference failures, missing market data, missing sentiment data.</idea>
+      <idea edge="integration">Integration test: Load real models, query market_data and sentiment_data tables, generate predictions, verify end-to-end inference workflow.</idea>
+    </ideas>
+  </tests>
+</story-context>
+

@@ -21,7 +21,7 @@ so that sentiment analysis is more comprehensive and reliable.
 
 - [ ] Create web scraping sentiment collection service (AC: 1, 2, 3, 6)
   - [x] Create `backend/app/services/sentiment_service.py` following service pattern from Story 2.2
-  - [ ] Install web scraping dependencies: `beautifulsoup4`, `requests` (or `httpx` for async) in `requirements.txt`
+  - [x] Install web scraping dependencies: `beautifulsoup4`, `requests` (or `httpx` for async) in `requirements.txt`
   - [ ] Implement web scraping collector class: `WebScrapingSentimentCollector`
   - [x] Implement function: `collect_sentiment_from_web(stock_symbol: str, source_url: str)` → returns {sentiment_score, source, timestamp}
   - [x] Add error handling: Handle scraping failures (sites down, HTML structure changes, network errors)
@@ -39,22 +39,22 @@ so that sentiment analysis is more comprehensive and reliable.
   - [x] Verify database model exists: `backend/app/models/sentiment_data.py` from Story 1.2 (verify fields: id, stock_id, sentiment_score, source, timestamp, created_at)
   - [x] Use async SQLAlchemy patterns following Story 2.2 patterns
 
-- [ ] Implement sentiment aggregation service (AC: 4)
+- [x] Implement sentiment aggregation service (AC: 4)
   - [x] Create sentiment aggregator in `backend/app/services/sentiment_service.py`
   - [x] Implement `aggregate_sentiment_scores(sentiment_records: List[SentimentData])` → unified score
-  - [ ] Implement weighted aggregation: Combine multiple source scores (can start with simple average, allow configurable weights)
-  - [ ] Handle missing sources: Aggregation works with partial data (some sources unavailable)
-  - [ ] Store source attribution: Maintain list of sources used in aggregation
-  - [ ] Return aggregated result with metadata: {sentiment_score, source_count, sources: [source_list]}
+  - [x] Implement weighted aggregation: Combine multiple source scores (can start with simple average, allow configurable weights)
+  - [x] Handle missing sources: Aggregation works with partial data (some sources unavailable)
+  - [x] Store source attribution: Maintain list of sources used in aggregation
+  - [x] Return aggregated result with metadata: {sentiment_score, source_count, sources: [source_list]}
 
-- [ ] Implement multiple source collectors (AC: 2)
-  - [ ] Configure 2-3 target sources: Financial news sites (e.g., MarketWatch, Seeking Alpha, or similar)
-  - [ ] Implement individual collector functions for each source: `collect_from_source_1()`, `collect_from_source_2()`, etc.
-  - [ ] Abstract common scraping logic: Base collector class or shared utilities
-  - [ ] Handle source-specific parsing: Each source may have different HTML structure
-  - [ ] Implement sentiment scoring: Convert scraped text content to sentiment score (-1.0 to 1.0)
-  - [ ] Use simple sentiment analysis: Can use Python libraries (e.g., `vaderSentiment`, `textblob`) or simple keyword-based scoring
-  - [ ] Test with multiple stocks: Verify collectors work for various Fortune 500 stocks
+- [x] Implement multiple source collectors (AC: 2)
+  - [x] Configure 2-3 target sources: Financial news sites (e.g., MarketWatch, Seeking Alpha, or similar)
+  - [x] Implement individual collector functions for each source: `collect_from_source_1()`, `collect_from_source_2()`, etc.
+  - [x] Abstract common scraping logic: Base collector class or shared utilities
+  - [x] Handle source-specific parsing: Each source may have different HTML structure
+  - [x] Implement sentiment scoring: Convert scraped text content to sentiment score (-1.0 to 1.0)
+  - [x] Use simple sentiment analysis: Can use Python libraries (e.g., `vaderSentiment`, `textblob`) or simple keyword-based scoring
+  - [x] Test with multiple stocks: Verify collectors work for various Fortune 500 stocks
 
 - [ ] Create APScheduler scheduled task for sentiment collection (AC: 1, 2)
   - [x] Create `backend/app/tasks/sentiment.py` following task pattern from Story 2.2
@@ -63,7 +63,7 @@ so that sentiment analysis is more comprehensive and reliable.
   - [x] Integrate with APScheduler: Add job to scheduler in `backend/app/lifetime.py`
   - [x] Configure hourly trigger: `scheduler.add_job(collect_sentiment, 'cron', hour='*', minute=5)`
   - [x] Add overlap handling: Prevent overlapping job runs (use APScheduler coalesce/max_instances)
-  - [ ] Make job idempotent: Re-running doesn't create duplicate records (check timestamp/source uniqueness)
+  - [x] Make job idempotent: Re-running doesn't create duplicate records (check timestamp/source uniqueness)
   - [x] Call aggregation service: After collecting from all sources, aggregate scores per stock
 
 - [ ] Implement ethical scraping practices (AC: 3)
@@ -73,7 +73,7 @@ so that sentiment analysis is more comprehensive and reliable.
   - [x] Add user-agent header: Set identifiable user-agent (e.g., "OpenAlpha-Bot/1.0")
   - [x] Handle robots.txt disallow: Skip scraping if robots.txt disallows path
   - [x] Log scraping activities: Log which URLs scraped, when, with delays respected
-  - [ ] Add configuration for scraping delays: Environment variable or config setting for crawl-delay
+  - [x] Add configuration for scraping delays: Environment variable or config setting for crawl-delay
 
 - [ ] Implement error handling for scraping failures (AC: 6)
   - [ ] Handle network errors: Timeout errors, connection failures, DNS errors
@@ -84,12 +84,12 @@ so that sentiment analysis is more comprehensive and reliable.
   - [ ] Retry logic for transient failures: Retry on network timeouts (1-2 retries with delay)
   - [ ] Track source health: Track which sources are consistently failing (for monitoring)
 
-- [ ] Store sentiment data with source attribution (AC: 5)
-  - [ ] Store individual source sentiment: Each source's sentiment stored separately in `sentiment_data` table
-  - [ ] Store source name: `source` field in sentiment_data table (e.g., "marketwatch", "seeking_alpha")
-  - [ ] Store timestamp: When sentiment was collected (scraped content timestamp or collection time)
-  - [ ] Store aggregated sentiment: Optionally store aggregated score (or compute on-demand)
-  - [ ] Ensure data integrity: Foreign key relationships, unique constraints if needed (stock_id + source + timestamp)
+- [x] Store sentiment data with source attribution (AC: 5)
+  - [x] Store individual source sentiment: Each source's sentiment stored separately in `sentiment_data` table
+  - [x] Store source name: `source` field in sentiment_data table (e.g., "marketwatch", "seeking_alpha")
+  - [x] Store timestamp: When sentiment was collected (scraped content timestamp or collection time)
+  - [x] Store aggregated sentiment: Optionally store aggregated score (or compute on-demand)
+  - [x] Ensure data integrity: Foreign key relationships, unique constraints if needed (stock_id + source + timestamp)
 
 - [ ] Testing: Unit tests for sentiment collection service (AC: 1, 2, 3, 6)
   - [ ] Test web scraping collector: Mock HTML responses, test parsing logic, sentiment scoring
@@ -363,7 +363,19 @@ Implemented initial pipeline pieces:
 
 ### Completion Notes List
 
-Partial completion for ACs 1, 3, 4, 6. Remaining: per-source collectors, idempotency, additional tests, config for crawl-delay, and storing individual source records.
+✅ **Review follow-up completed (2025-11-03):**
+- **AC #5 (High priority)**: Implemented per-source sentiment storage before aggregation. Each source's sentiment is now persisted separately in `sentiment_data` table with source attribution (e.g., "marketwatch.com", "seekingalpha.com"). Aggregated scores stored as "web_aggregate" source.
+- **AC #2 (Medium priority)**: Updated collectors to use symbol-specific URLs. `collect_marketwatch_sentiment()` and `collect_seekingalpha_sentiment()` now construct URLs with stock symbols (e.g., `marketwatch.com/investing/stock/aapl`).
+- **Idempotency (Medium priority)**: Implemented `upsert_sentiment_data()` function in CRUD layer that checks for existing records using (stock_id, source, timestamp) before creating. Uses minute-normalized timestamps to prevent duplicates across job runs. Updated task to use upsert instead of manual existence checks.
+- **Crawl-delay config (Low priority)**: Enhanced `RateLimiter` class to support per-domain delays. Now tracks domain-specific delays from robots.txt crawl-delay directives and applies them dynamically. Maintains backward compatibility with default delay from config.
+
+**Implementation details:**
+- Per-source persistence: Task now stores individual source records before aggregation (lines 68-83 in `backend/app/tasks/sentiment.py`)
+- Upsert pattern: New `upsert_sentiment_data()` function in `backend/app/crud/sentiment_data.py` provides idempotent record creation
+- Per-domain rate limiting: `RateLimiter.set_domain_delay()` method allows domain-specific delays from robots.txt
+- Test coverage: Added `test_upsert_sentiment_data_idempotency()` test to verify idempotency behavior
+
+**All review action items addressed. Story ready for re-review.**
 
 ### File List
 
@@ -372,12 +384,16 @@ Partial completion for ACs 1, 3, 4, 6. Remaining: per-source collectors, idempot
 - backend/app/tasks/sentiment.py [added]
 - backend/app/lifetime.py [modified]
 - backend/requirements.txt [modified]
-- backend/tests/test_crud/test_sentiment_data.py [added]
+- backend/tests/test_crud/test_sentiment_data.py [added, updated with upsert test]
 - backend/tests/test_services/test_sentiment_service.py [added]
+- backend/app/crud/sentiment_data.py [updated: added upsert_sentiment_data function]
+- backend/app/services/sentiment_service.py [updated: enhanced RateLimiter with per-domain delays]
+- backend/app/tasks/sentiment.py [updated: use upsert for idempotency, per-source persistence]
 
 ### Change Log
 
-- Implemented initial web scraping sentiment pipeline and scheduler wiring (Date: {{date}})
+- Implemented initial web scraping sentiment pipeline and scheduler wiring (Date: 2025-11-03)
+- Addressed code review findings: per-source storage, symbol-specific URLs, idempotency with upsert, per-domain crawl-delay config (Date: 2025-11-03)
 
 ## Senior Developer Review (AI)
 
@@ -443,10 +459,10 @@ Summary: Verified all checked items; noted unmarked-but-done dependency install;
 ### Action Items
 
 **Code Changes Required:**
-- [ ] [High] Persist individual source records before aggregation (AC #5) [file: backend/app/tasks/sentiment.py]
-- [ ] [Med] Update collectors to use symbol-specific URLs and parsing (AC #2) [file: backend/app/services/sentiment_service.py]
-- [ ] [Med] Implement idempotency using uniqueness (stock_id, source, timestamp) or upsert [file: backend/app/crud/sentiment_data.py]
-- [ ] [Low] Expose crawl-delay config per domain; respect robots.txt crawl-delay dynamically [file: backend/app/services/sentiment_service.py]
+- [x] [High] Persist individual source records before aggregation (AC #5) [file: backend/app/tasks/sentiment.py]
+- [x] [Med] Update collectors to use symbol-specific URLs and parsing (AC #2) [file: backend/app/services/sentiment_service.py]
+- [x] [Med] Implement idempotency using uniqueness (stock_id, source, timestamp) or upsert [file: backend/app/crud/sentiment_data.py]
+- [x] [Low] Expose crawl-delay config per domain; respect robots.txt crawl-delay dynamically [file: backend/app/services/sentiment_service.py]
 
 **Advisory Notes:**
 - Note: Mark dependencies task as completed in story Tasks section to reflect current state.

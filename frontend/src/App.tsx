@@ -11,9 +11,6 @@ import './App.css';
 function App() {
   return (
     <>
-      <div style={{ position: 'fixed', top: 8, left: 8, zIndex: 9999, color: '#000', background: '#fffbcc', padding: '8px 12px', borderRadius: 6 }}>
-        Frontend is running ✅
-      </div>
       <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />

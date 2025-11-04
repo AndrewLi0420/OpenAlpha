@@ -1,0 +1,147 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.5</storyId>
+    <title>ML Model Training Infrastructure</title>
+    <status>drafted</status>
+    <generatedAt>2025-01-31</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/2-5-ml-model-training-infrastructure.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>ML model training pipeline set up with PyTorch/TensorFlow and scikit-learn</iWant>
+    <soThat>prediction models can be trained on historical data</soThat>
+    <tasks>
+- Configure Python ML environment with dependencies (AC: 1)
+  - Add PyTorch, TensorFlow, scikit-learn, pandas, numpy to requirements.txt
+  - Verify Python 3.11+ requirement
+  - Test ML environment imports
+
+- Create ML training data pipeline (AC: 2)
+  - Create backend/app/services/ml_service.py
+  - Implement load_training_data() and prepare_feature_vectors()
+  - Feature engineering: market data + sentiment → feature vectors
+  - Normalize features, split train/validation/test sets
+
+- Define neural network model architecture (AC: 3)
+  - Implement NeuralNetworkModel class
+  - Define input/hidden/output layers (3-class classification: buy/sell/hold)
+  - Use ReLU activation, Softmax output, Adam optimizer
+
+- Define Random Forest classifier model (AC: 4)
+  - Implement RandomForestClassifier using scikit-learn
+  - Configure hyperparameters (n_estimators, max_depth)
+
+- Create training script/service (AC: 5)
+  - Implement train_models() function
+  - Training workflow: load data → feature engineering → train models → evaluate → save
+  - Add logging and error handling
+
+- Implement model artifact saving (AC: 6)
+  - Create ml-models/ directory
+  - Save models as .pth (PyTorch) or .pkl (scikit-learn)
+  - Save model metadata (version, performance metrics)
+
+- Implement model versioning system (AC: 7)
+  - Define versioning scheme (semantic or timestamp-based)
+  - Create version tracking (JSON file or database table)
+  - Implement get_latest_model_version() and load_model()
+
+- Testing: Unit tests for ML training service
+- Testing: Integration tests for ML training pipeline
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. Python ML environment configured with PyTorch, TensorFlow, scikit-learn
+2. Training data pipeline: historical market data + sentiment → feature vectors
+3. Neural network model architecture defined (can be simple initially)
+4. Random Forest classifier model defined
+5. Training script can run locally or in cloud
+6. Model artifacts saved (can use GitHub LFS or cloud storage)
+7. Model versioning system in place
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Story 2.5: ML Model Training Infrastructure" snippet="Story 2.5 establishes ML model training infrastructure with PyTorch/TensorFlow and scikit-learn. Training data pipeline combines historical market data and sentiment into feature vectors. Neural network and Random Forest models trained on historical data." />
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="Services and Modules" snippet="ML Model Training Service: Trains neural network and Random Forest models on historical data. Location: backend/app/services/ml_service.py (training functions). Inputs: Historical market data, sentiment data. Outputs: Trained model artifacts." />
+      <doc path="dist/tech-spec-epic-2.md" title="Epic 2 Technical Specification" section="ML Model Training Workflow" snippet="1. Developer/admin triggers training script. 2. Training pipeline loads historical market data and sentiment data. 3. Feature engineering: Combines market data + sentiment → feature vectors. 4-5. Train neural network and Random Forest models. 6. Evaluate models: Calculate R², accuracy metrics. 7. Save model artifacts to ml-models/ directory (versioned)." />
+      <doc path="dist/architecture.md" title="Architecture" section="Technology Stack Details" snippet="Backend Stack: PyTorch/TensorFlow for neural networks, scikit-learn for Random Forest. ML models stored in ml-models/ directory. Python 3.11+ for async/await support." />
+      <doc path="dist/architecture.md" title="Architecture" section="Project Structure" snippet="ml-models/ directory for ML model artifacts. backend/app/services/ml_service.py for ML training and inference services." />
+      <doc path="dist/epics.md" title="Epic Breakdown" section="Story 2.5: ML Model Training Infrastructure" snippet="As a developer, I want ML model training pipeline set up with PyTorch/TensorFlow and scikit-learn, so that prediction models can be trained on historical data. Acceptance criteria: Python ML environment, training data pipeline, neural network architecture, Random Forest classifier, training script, model artifacts saving, model versioning." />
+      <doc path="docs/stories/2-4-additional-sentiment-sources-web-scraping.md" title="Story 2.4" section="Dev Notes" snippet="Service pattern: Sentiment service established at backend/app/services/sentiment_service.py with async patterns, error handling, logging. Follow similar pattern for ML service. CRUD pattern: Use async SQLAlchemy patterns to query historical data from market_data and sentiment_data tables." />
+    </docs>
+    <code>
+      <artifact path="backend/app/services/sentiment_service.py" kind="service" symbol="sentiment_service" lines="1-50" reason="Reference implementation for service pattern: async/await, error handling, structured logging. Follow similar pattern for ml_service.py." />
+      <artifact path="backend/app/services/data_collection.py" kind="service" symbol="data_collection" lines="1-50" reason="Reference implementation for service pattern with rate limiting, retry logic, async patterns. Follow similar structure for ML service." />
+      <artifact path="backend/app/crud/market_data.py" kind="crud" symbol="get_market_data_history" lines="68-97" reason="Function to query historical market data by date range. Use similar pattern for loading training data in ML service." />
+      <artifact path="backend/app/crud/sentiment_data.py" kind="crud" symbol="get_sentiment_data_history" lines="74-96" reason="Function to query historical sentiment data by date range. Use similar pattern for loading training data in ML service." />
+      <artifact path="backend/app/models/market_data.py" kind="model" symbol="MarketData" lines="1-37" reason="Market data model with price, volume, timestamp fields. Used as input for ML training data pipeline." />
+      <artifact path="backend/app/models/sentiment_data.py" kind="model" symbol="SentimentData" lines="1-37" reason="Sentiment data model with sentiment_score, source, timestamp fields. Used as input for ML training data pipeline." />
+      <artifact path="backend/tests/test_services/test_sentiment_service.py" kind="test" symbol="test_sentiment_service" reason="Reference test pattern for service tests. Follow similar pattern for ML service tests." />
+      <artifact path="backend/tests/test_crud/test_market_data.py" kind="test" symbol="test_market_data" reason="Reference test pattern for CRUD operations with async database queries. Follow similar pattern for testing ML training data loading." />
+      <artifact path="backend/tests/conftest.py" kind="test" symbol="db_session" lines="13-49" reason="Pytest fixture for async database session. Use this fixture for ML service tests that need database access." />
+    </code>
+    <dependencies>
+      <python>
+        <package name="torch" version=">=2.0.0" />
+        <package name="tensorflow" version=">=2.13.0" optional="true" />
+        <package name="scikit-learn" version=">=1.3.0" />
+        <package name="pandas" version=">=2.0.0" />
+        <package name="numpy" version=">=1.24.0" />
+        <package name="sqlalchemy" version=">=2.0.0,<3.0.0" />
+        <package name="pytest" version=">=7.2.2" />
+        <package name="pytest-asyncio" version=">=0.21.0" />
+        <package name="fastapi" version=">=0.109.2" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Follow async/await patterns throughout (SQLAlchemy async support for database queries)</constraint>
+    <constraint>Use structured logging for all operations (logger.info with structured data)</constraint>
+    <constraint>Service pattern: Create backend/app/services/ml_service.py following pattern from sentiment_service.py and data_collection.py</constraint>
+    <constraint>Database queries: Use async SQLAlchemy patterns to query historical data from market_data and sentiment_data tables</constraint>
+    <constraint>Model storage: Use local file storage (ml-models/ directory) for MVP, can migrate to cloud storage later</constraint>
+    <constraint>Model versioning: Simple initially (file naming convention), can enhance later with database tracking</constraint>
+    <constraint>Neural network: Simple architecture initially (1-2 hidden layers), can enhance later</constraint>
+    <constraint>Random Forest: Default scikit-learn parameters initially, can tune later</constraint>
+    <constraint>Training: Can run locally or in cloud (Render), must work in both environments</constraint>
+    <constraint>Error handling: Graceful degradation - log errors, don't crash on training failures</constraint>
+    <constraint>Testing: Use pytest with async support (pytest-asyncio), mock database queries for unit tests</constraint>
+    <constraint>Python version: 3.11+ required for async/await support and ML libraries</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="load_training_data" kind="function" signature="async def load_training_data(session: AsyncSession, start_date: datetime, end_date: datetime) -> tuple[list[MarketData], list[SentimentData]]" path="backend/app/services/ml_service.py" />
+    <interface name="prepare_feature_vectors" kind="function" signature="def prepare_feature_vectors(market_data: list[MarketData], sentiment_data: list[SentimentData]) -> tuple[np.ndarray, np.ndarray]" path="backend/app/services/ml_service.py" />
+    <interface name="train_models" kind="function" signature="async def train_models(session: AsyncSession, start_date: datetime, end_date: datetime) -> dict[str, Any]" path="backend/app/services/ml_service.py" />
+    <interface name="get_market_data_history" kind="function" signature="async def get_market_data_history(session: AsyncSession, stock_id: UUID, start_date: datetime, end_date: datetime) -> list[MarketData]" path="backend/app/crud/market_data.py" />
+    <interface name="get_sentiment_data_history" kind="function" signature="async def get_sentiment_data_history(session: AsyncSession, stock_id: UUID, start_date: datetime, end_date: datetime, source: str | None = None) -> list[SentimentData]" path="backend/app/crud/sentiment_data.py" />
+  </interfaces>
+
+  <tests>
+    <standards>Use pytest with async support (pytest-asyncio) for all backend tests. Use db_session fixture from conftest.py for database access. Follow test patterns from test_services and test_crud directories. Mock database queries for unit tests, use real database for integration tests. Use small datasets for unit tests (don't train on full dataset in tests).</standards>
+    <locations>
+      <location>backend/tests/test_services/test_ml_service.py</location>
+      <location>backend/tests/test_crud/</location>
+      <location>backend/tests/test_api/</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test ML environment setup: Verify all dependencies (torch, tensorflow, sklearn, pandas, numpy) importable</idea>
+      <idea ac="2">Test training data pipeline: Test load_training_data() with mock data, test prepare_feature_vectors() with sample data, test feature normalization</idea>
+      <idea ac="3">Test neural network model: Test model architecture, forward pass, training step, loss calculation</idea>
+      <idea ac="4">Test Random Forest model: Test model training, prediction, hyperparameter configuration</idea>
+      <idea ac="5">Test training script: Test train_models() end-to-end with real database, test error handling, test logging</idea>
+      <idea ac="6">Test model saving/loading: Test save_model() and load_model() round-trip, test model file formats</idea>
+      <idea ac="7">Test model versioning: Test version tracking, latest version retrieval, version conflicts</idea>
+      <idea integration="training_pipeline">Integration test: Load real historical data, train models, save artifacts, verify model performance metrics</idea>
+      <idea edge_case="missing_data">Test graceful handling of missing historical data, insufficient training data</idea>
+      <idea edge_case="training_failure">Test error handling for model training failures, model saving failures</idea>
+    </ideas>
+  </tests>
+</story-context>
+

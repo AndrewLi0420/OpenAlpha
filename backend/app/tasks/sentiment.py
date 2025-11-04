@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 from app.crud.stocks import get_all_stocks as _get_all_stocks
-from app.crud.sentiment_data import create_sentiment_data, exists_sentiment_record
+from app.crud.sentiment_data import upsert_sentiment_data
 from app.services.sentiment_service import (
     collect_marketwatch_sentiment,
     collect_seekingalpha_sentiment,
@@ -70,16 +70,14 @@ async def collect_sentiment_for_stocks(
             for src in rec:
                 try:
                     ts_norm = _normalize_timestamp_minute(src["timestamp"]) if src.get("timestamp") else datetime.now(timezone.utc).replace(second=0, microsecond=0)
-                    if not await exists_sentiment_record(
-                        session, stock.id, src.get("source", "unknown"), ts_norm
-                    ):
-                        await create_sentiment_data(
-                            session=session,
-                            stock_id=stock.id,
-                            sentiment_score=src["sentiment_score"],
-                            source=src.get("source", "unknown"),
-                            timestamp=ts_norm,
-                        )
+                    # Use upsert for idempotency (handles duplicates gracefully)
+                    await upsert_sentiment_data(
+                        session=session,
+                        stock_id=stock.id,
+                        sentiment_score=src["sentiment_score"],
+                        source=src.get("source", "unknown"),
+                        timestamp=ts_norm,
+                    )
                     persisted_any = True
                 except Exception as e:
                     logger.error("DB error storing per-source sentiment for %s: %s", stock.symbol, e)
@@ -94,14 +92,14 @@ async def collect_sentiment_for_stocks(
                     _normalize_timestamp_minute(src["timestamp"]) for src in rec if src.get("timestamp")
                 ]
                 ts = max(ts_candidates) if ts_candidates else datetime.now(timezone.utc).replace(second=0, microsecond=0)
-                if not await exists_sentiment_record(session, stock.id, "web_aggregate", ts):
-                    await create_sentiment_data(
-                        session=session,
-                        stock_id=stock.id,
-                        sentiment_score=agg["sentiment_score"],
-                        source="web_aggregate",
-                        timestamp=ts,
-                    )
+                # Use upsert for idempotency (handles duplicates gracefully)
+                await upsert_sentiment_data(
+                    session=session,
+                    stock_id=stock.id,
+                    sentiment_score=agg["sentiment_score"],
+                    source="web_aggregate",
+                    timestamp=ts,
+                )
                 stats["successful"] += 1 if persisted_any or agg else 1
             except Exception as e:
                 logger.error("DB error storing sentiment for %s: %s", stock.symbol, e)

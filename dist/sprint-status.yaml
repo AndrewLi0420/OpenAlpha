@@ -40,7 +40,7 @@ development_status:
   1-1-project-infrastructure-setup: done
   1-2-database-schema-design: done
   1-3-user-registration: done
-  1-4-user-authentication-session-management: in-progress
+  1-4-user-authentication-session-management: done
   1-5-user-profile-preferences-management: done
   1-6-freemium-tier-enforcement: done
   1-7-responsive-ui-foundation-with-tailwind-css: done
@@ -51,10 +51,10 @@ development_status:
   2-2-market-data-collection-pipeline: done
   2-3-twitter-sentiment-collection: deferred-to-v2
   2-4-additional-sentiment-sources-web-scraping: done
-  2-5-ml-model-training-infrastructure: backlog
-  2-6-ml-model-inference-service: backlog
-  2-7-risk-assessment-calculation: backlog
-  2-8-recommendation-generation-logic: backlog
+  2-5-ml-model-training-infrastructure: done
+  2-6-ml-model-inference-service: done
+  2-7-risk-assessment-calculation: done
+  2-8-recommendation-generation-logic: done
   epic-2-retrospective: optional
 
   epic-3: backlog

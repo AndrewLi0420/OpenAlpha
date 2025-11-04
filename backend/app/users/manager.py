@@ -19,12 +19,14 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, UUID]):
     ) -> None:
         name = user.full_name or user.short_name
         subject = f"Welcome to {name}!" if name else "Welcome!"
-        await queue.enqueue(
-            "send_email_task",
-            recipient=(user.email, None),
-            subject=subject,
-            html=render_email_template("welcome.html", context={"user": user}),
-        )
+        # Only send email if emails are enabled; avoids queue usage in tests
+        if settings.EMAILS_ENABLED:
+            await queue.enqueue(
+                "send_email_task",
+                recipient=(user.email, None),
+                subject=subject,
+                html=render_email_template("welcome.html", context={"user": user}),
+            )
 
     async def validate_password(self, password: str, user: User) -> None:
         """Validate password requirements: minimum 8 characters, complexity check.

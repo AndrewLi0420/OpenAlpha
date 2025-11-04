@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
 
 from pydantic import BaseModel, Field
-from pydantic.generics import GenericModel
 
 from .config import settings
 
@@ -18,7 +17,7 @@ class Params(BaseModel):
     offset: int = Field(0, gt=-1)
 
 
-class Page(GenericModel, Generic[T]):
+class Page(BaseModel, Generic[T]):
     items: list[T]
     total: int
 

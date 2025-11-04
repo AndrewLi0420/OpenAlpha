@@ -1,8 +1,17 @@
 """Pytest configuration and fixtures"""
+import os
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
+
+# Ensure required env vars for app settings exist before importing app modules
+os.environ.setdefault("SECRET_KEY", "test-secret-key")
+os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
+os.environ.setdefault("DATABASE_URI", "postgresql+asyncpg://user:pass@localhost:5432/testdb")
+os.environ.setdefault("DEFAULT_FROM_EMAIL", "noreply@example.com")
+os.environ.setdefault("FIRST_SUPERUSER_EMAIL", "admin@example.com")
+os.environ.setdefault("FIRST_SUPERUSER_PASSWORD", "adminpass123!")
 
 from app.db.config import Base
 # Ensure all models are imported so metadata includes every table

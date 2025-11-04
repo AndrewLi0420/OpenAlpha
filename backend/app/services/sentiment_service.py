@@ -15,17 +15,27 @@ logger = logging.getLogger(__name__)
 
 
 class RateLimiter:
-    """Simple per-domain rate limiter enforcing a minimum delay between requests."""
+    """Per-domain rate limiter enforcing configurable delays between requests.
+    Supports domain-specific delays from robots.txt crawl-delay or config.
+    """
 
-    def __init__(self, min_delay_seconds: float = 2.0) -> None:
-        self.min_delay_seconds = min_delay_seconds
+    def __init__(self, default_delay_seconds: float = 2.0) -> None:
+        self.default_delay_seconds = default_delay_seconds
         self._domain_to_lock: dict[str, asyncio.Lock] = {}
+        self._domain_to_delay: dict[str, float] = {}
+
+    def set_domain_delay(self, domain: str, delay_seconds: float) -> None:
+        """Set domain-specific delay (e.g., from robots.txt crawl-delay)."""
+        self._domain_to_delay[domain] = delay_seconds
 
     async def wait(self, domain: str) -> None:
+        """Wait for the configured delay for this domain."""
         lock = self._domain_to_lock.setdefault(domain, asyncio.Lock())
+        # Use domain-specific delay if set, otherwise default
+        delay = self._domain_to_delay.get(domain, self.default_delay_seconds)
         # Serialize requests per domain; add delay between sequential calls
         async with lock:
-            await asyncio.sleep(self.min_delay_seconds)
+            await asyncio.sleep(delay)
 
 
 async def _load_robots_txt(client: httpx.AsyncClient, base_url: str) -> RobotFileParser | None:
@@ -66,7 +76,7 @@ async def collect_sentiment_from_web(
         if rp and not rp.can_fetch(effective_user_agent, source_url):
             logger.info("Robots.txt disallows scraping %s", source_url)
             return None
-        # Determine crawl-delay per robots.txt if available
+        # Determine crawl-delay per robots.txt if available (override default)
         if rp:
             try:
                 cd = rp.crawl_delay(effective_user_agent)
@@ -74,7 +84,15 @@ async def collect_sentiment_from_web(
                     effective_delay = float(cd)
             except Exception:
                 pass
-        rate_limiter = RateLimiter(min_delay_seconds=effective_delay)
+        rate_limiter = RateLimiter(default_delay_seconds=effective_delay)
+        # Set domain-specific delay if robots.txt specified one (for per-domain tracking)
+        if rp:
+            try:
+                cd = rp.crawl_delay(effective_user_agent)
+                if isinstance(cd, (int, float)) and cd > 0:
+                    rate_limiter.set_domain_delay(domain, float(cd))
+            except Exception:
+                pass
         # Respect per-domain delay
         await rate_limiter.wait(domain)
 

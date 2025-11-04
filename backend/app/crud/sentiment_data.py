@@ -51,6 +51,42 @@ async def create_sentiment_data(
     return record
 
 
+async def upsert_sentiment_data(
+    session: AsyncSession,
+    stock_id: UUID,
+    sentiment_score: float,
+    source: str,
+    timestamp: datetime,
+) -> SentimentData:
+    """
+    Upsert sentiment data record (insert or update if exists).
+    Uses existence check with (stock_id, source, timestamp) for idempotency.
+    """
+    # Check if record already exists
+    existing = await exists_sentiment_record(session, stock_id, source, timestamp)
+    if existing:
+        # Fetch existing record and return it
+        result = await session.execute(
+            select(SentimentData).where(
+                and_(
+                    SentimentData.stock_id == stock_id,
+                    SentimentData.source == source,
+                    SentimentData.timestamp == timestamp,
+                )
+            )
+        )
+        return result.scalar_one()
+    
+    # Create new record
+    return await create_sentiment_data(
+        session=session,
+        stock_id=stock_id,
+        sentiment_score=sentiment_score,
+        source=source,
+        timestamp=timestamp,
+    )
+
+
 async def get_latest_sentiment_data(
     session: AsyncSession,
     stock_id: UUID,

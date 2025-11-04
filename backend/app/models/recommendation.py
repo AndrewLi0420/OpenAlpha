@@ -1,7 +1,7 @@
 """Recommendation model"""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 from sqlalchemy import Column, ForeignKey, Enum as SQLEnum, Numeric, Text, DateTime, Index
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -33,6 +33,8 @@ class Recommendation(Base):
         nullable=False
     )
     confidence_score = Column(Numeric(precision=5, scale=4), nullable=False)  # R²-based, 0 to 1
+    # Aggregated sentiment score used at generation time; kept nullable for backward-compat
+    sentiment_score = Column(Numeric(precision=5, scale=4), nullable=True)
     risk_level = Column(
         SQLEnum(RiskLevelEnum, native_enum=False),
         nullable=False
@@ -40,7 +42,7 @@ class Recommendation(Base):
     explanation = Column(Text, nullable=True)
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
         nullable=False,
         index=True
     )

@@ -1,3 +1,31 @@
+<storyContext>
+  <meta>
+    <storyKey>{{story_key}}</storyKey>
+    <storyId>{{epic_id}}.{{story_id}}</storyId>
+    <storyTitle>{{story_title}}</storyTitle>
+    <status>drafted</status>
+    <generatedAt>{{date}}</generatedAt>
+  </meta>
+  <story>
+    <asA>{{as_a}}</asA>
+    <iWant>{{i_want}}</iWant>
+    <soThat>{{so_that}}</soThat>
+  </story>
+  <acceptanceCriteria />
+  <tasks />
+  <artifacts>
+    <docs />
+    <code />
+    <interfaces />
+    <dependencies />
+  </artifacts>
+  <constraints />
+  <tests>
+    <standards />
+    <locations />
+    <ideas />
+  </tests>
+</storyContext>
 <story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
   <metadata>
     <epicId>{{epic_id}}</epicId>
