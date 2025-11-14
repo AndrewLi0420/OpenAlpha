@@ -1,7 +1,6 @@
 """ML model training and inference service"""
 from __future__ import annotations
 
-import logging
 import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,6 +17,7 @@ from sklearn.model_selection import train_test_split
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.logger import logger
 from app.crud.market_data import get_market_data_history
 from app.crud.sentiment_data import get_sentiment_data_history
 from app.crud.stocks import get_all_stocks
@@ -27,8 +27,6 @@ from app.services.ml_exceptions import (
     InvalidInputError,
     ModelNotLoadedError,
 )
-
-logger = logging.getLogger(__name__)
 
 
 async def load_training_data(
@@ -444,15 +442,16 @@ def save_model(
         model_type: Type of model ("neural_network" or "random_forest")
         version: Model version (e.g., "v1.0.0" or "2024-10-30")
         metrics: Optional model performance metrics
-        base_path: Base path for model storage (default: ml-models/ in project root)
+        base_path: Base path for model storage (default: ml-models/ in backend root)
     
     Returns:
         Path to saved model file
     """
     if base_path is None:
-        # Default to ml-models/ in project root
-        project_root = Path(__file__).parent.parent.parent.parent
-        base_path = project_root / "ml-models"
+        # Default to ml-models/ in backend root
+        # Go up 3 levels from backend/app/services/ml_service.py to backend/
+        backend_root = Path(__file__).parent.parent.parent
+        base_path = backend_root / "ml-models"
     else:
         base_path = Path(base_path)
     
@@ -512,14 +511,15 @@ def load_model(
     Args:
         model_type: Type of model ("neural_network" or "random_forest")
         version: Model version (defaults to latest if None)
-        base_path: Base path for model storage (default: ml-models/ in project root)
+        base_path: Base path for model storage (default: ml-models/ in backend root)
     
     Returns:
         Tuple of (loaded_model, metadata_dict)
     """
     if base_path is None:
-        project_root = Path(__file__).parent.parent.parent.parent
-        base_path = project_root / "ml-models"
+        # Go up 3 levels from backend/app/services/ml_service.py to backend/
+        backend_root = Path(__file__).parent.parent.parent
+        base_path = backend_root / "ml-models"
     else:
         base_path = Path(base_path)
     
@@ -568,14 +568,15 @@ def get_latest_model_version(model_type: str, base_path: str | Path | None = Non
     
     Args:
         model_type: Type of model ("neural_network" or "random_forest")
-        base_path: Base path for model storage (default: ml-models/ in project root)
+        base_path: Base path for model storage (default: ml-models/ in backend root)
     
     Returns:
         Latest version string or None if no versions found
     """
     if base_path is None:
-        project_root = Path(__file__).parent.parent.parent.parent
-        base_path = project_root / "ml-models"
+        # Go up 3 levels from backend/app/services/ml_service.py to backend/
+        backend_root = Path(__file__).parent.parent.parent
+        base_path = backend_root / "ml-models"
     else:
         base_path = Path(base_path)
     
@@ -829,7 +830,7 @@ def initialize_models(base_path: str | Path | None = None) -> dict[str, Any]:
     for fast inference. Should be called during FastAPI startup.
     
     Args:
-        base_path: Base path for model storage (default: ml-models/ in project root)
+        base_path: Base path for model storage (default: ml-models/ in backend root)
     
     Returns:
         Dictionary with initialization status and model versions
@@ -842,8 +843,40 @@ def initialize_models(base_path: str | Path | None = None) -> dict[str, Any]:
         "random_forest": {"loaded": False, "version": None, "error": None},
     }
     
+    # Determine the actual base_path that will be used
+    if base_path is None:
+        # Go up 3 levels from backend/app/services/ml_service.py to backend/
+        backend_root = Path(__file__).parent.parent.parent
+        actual_base_path = backend_root / "ml-models"
+    else:
+        actual_base_path = Path(base_path)
+    
+    logger.info("=== initialize_models() called ===")
+    logger.info("base_path parameter: %s", base_path)
+    logger.info("Actual base_path being used: %s", actual_base_path)
+    logger.info("base_path exists: %s", actual_base_path.exists())
+    if actual_base_path.exists():
+        logger.info("base_path contents: %s", list(actual_base_path.iterdir()))
+    
     # Load neural network model
     try:
+        # Determine model path before loading for logging
+        if base_path is None:
+            # Go up 3 levels from backend/app/services/ml_service.py to backend/
+            backend_root = Path(__file__).parent.parent.parent
+            model_base = backend_root / "ml-models"
+        else:
+            model_base = Path(base_path)
+        
+        # Get latest version to log the exact path
+        latest_version = get_latest_model_version("neural_network", base_path=base_path)
+        if latest_version:
+            model_path = model_base / f"neural_network_{latest_version}.pth"
+            logger.info("Attempting to load neural network from: %s", model_path)
+            logger.info("Model path exists: %s", model_path.exists())
+        else:
+            logger.warning("No neural network model version found")
+        
         _neural_network_model, _neural_network_metadata = load_model(
             "neural_network", version=None, base_path=base_path
         )
@@ -857,6 +890,23 @@ def initialize_models(base_path: str | Path | None = None) -> dict[str, Any]:
     
     # Load Random Forest model
     try:
+        # Determine model path before loading for logging
+        if base_path is None:
+            # Go up 3 levels from backend/app/services/ml_service.py to backend/
+            backend_root = Path(__file__).parent.parent.parent
+            model_base = backend_root / "ml-models"
+        else:
+            model_base = Path(base_path)
+        
+        # Get latest version to log the exact path
+        latest_version = get_latest_model_version("random_forest", base_path=base_path)
+        if latest_version:
+            rf_path = model_base / f"random_forest_{latest_version}.pkl"
+            logger.info("Attempting to load random forest from: %s", rf_path)
+            logger.info("Random forest path exists: %s", rf_path.exists())
+        else:
+            logger.warning("No random forest model version found")
+        
         _random_forest_model, _random_forest_metadata = load_model(
             "random_forest", version=None, base_path=base_path
         )
@@ -867,6 +917,18 @@ def initialize_models(base_path: str | Path | None = None) -> dict[str, Any]:
         error_msg = str(e)
         results["random_forest"]["error"] = error_msg
         logger.warning("Failed to load Random Forest model: %s", error_msg)
+    
+    # Log the exact dict that will be returned
+    logger.info("=== initialize_models() returning ===")
+    logger.info("Results dict: %s", results)
+    logger.info("Neural network - loaded: %s, version: %s, error: %s", 
+               results["neural_network"]["loaded"], 
+               results["neural_network"]["version"],
+               results["neural_network"]["error"])
+    logger.info("Random forest - loaded: %s, version: %s, error: %s", 
+               results["random_forest"]["loaded"], 
+               results["random_forest"]["version"],
+               results["random_forest"]["error"])
     
     return results
 

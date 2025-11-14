@@ -84,8 +84,10 @@ async def main():
                 print(f"    Model path: {nn.get('model_path')}")
                 if "metrics" in nn:
                     metrics = nn["metrics"]
-                    print(f"    Accuracy: {metrics.get('accuracy', 'N/A'):.3f}")
-                    print(f"    R²: {metrics.get('r_squared', 'N/A'):.3f}")
+                    accuracy = metrics.get('accuracy', 'N/A')
+                    r_squared = metrics.get('r_squared', 'N/A')
+                    print(f"    Accuracy: {accuracy:.3f}" if isinstance(accuracy, (int, float)) else f"    Accuracy: {accuracy}")
+                    print(f"    R²: {r_squared:.3f}" if isinstance(r_squared, (int, float)) else f"    R²: {r_squared}")
             
             if "random_forest" in results:
                 rf = results["random_forest"]
@@ -93,8 +95,10 @@ async def main():
                 print(f"    Model path: {rf.get('model_path')}")
                 if "metrics" in rf:
                     metrics = rf["metrics"]
-                    print(f"    Accuracy: {metrics.get('accuracy', 'N/A'):.3f}")
-                    print(f"    R²: {metrics.get('r_squared', 'N/A'):.3f}")
+                    accuracy = metrics.get('accuracy', 'N/A')
+                    r_squared = metrics.get('r_squared', 'N/A')
+                    print(f"    Accuracy: {accuracy:.3f}" if isinstance(accuracy, (int, float)) else f"    Accuracy: {accuracy}")
+                    print(f"    R²: {r_squared:.3f}" if isinstance(r_squared, (int, float)) else f"    R²: {r_squared}")
             
             print("\n✓ Models saved to ml-models/ directory")
             print("⚠ IMPORTANT: Restart the backend server for models to load")
